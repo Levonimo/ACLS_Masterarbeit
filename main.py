@@ -7,7 +7,7 @@ Data.interact_with_msdial("F:/ProgramFiles/MSDIAL/MsdialConsoleApp.exe", "GCMS")
 
 Data.convert_msdial_to_csv()
 
-Data.get_list_of_chromatograms('022_A1_1_OOO')
+Data.get_list_of_chromatograms(['022_A1_1_OOO','012')
 
 
 # import ms search library with msp file

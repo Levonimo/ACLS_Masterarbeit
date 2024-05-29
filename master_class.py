@@ -13,21 +13,27 @@ class Data_Preparation:
     def __init__(self, path):
         self.path = path
         self.mzml_path = self.path + "/mzml"
-        self.msdial_path = self.path + "/MSDIAL"
-        self.csv_path = self.path + "/CSV"
-
-        self.mZ_totlist = np.round(np.arange(20, 400.1, 0.1), 1)
-    ####################################################################################################################
-    def convert_d_to_mzml(self):
-
         if not os.path.exists(self.mzml_path):
             os.mkdir(self.mzml_path)
+        self.msdial_path = self.path + "/MSDIAL"
+        if not os.path.exists(self.msdial_path):
+            os.mkdir(self.msdial_path)
+        self.csv_path = self.path + "/CSV"
+        if not os.path.exists(self.csv_path):
+            os.mkdir(self.csv_path)
 
+        self.mZ_totlist = np.round(np.arange(20, 400.1, 0.1), 1)
+
+    ####################################################################################################################
+    def convert_d_to_mzml(self):
         for file in os.listdir(self.path):
             if file.endswith(".D"):
                 command = f"msconvert {self.path} -o {self.mzml_path} --mzML"
                 subprocess.run(command, shell=True)
 
+
+    def get_name_of_mzml_files(self):
+        return os.listdir(self.mzml_path)
 
 
 
@@ -37,10 +43,6 @@ class Data_Preparation:
         self.msdial_params = self.path + '/' + param_file_name + '.txt'
         self.msdial_consol_app = msdial_path
         self.type = type
-
-        # Create the output folder if it doesn't exist
-        if not os.path.exists(self.msdial_path):
-            os.mkdir(self.msdial_path)
 
         # Replace all frontslashes with backslashes
         msdial_app = frontslash_to_backslash(self.msdial_consol_app)
@@ -106,12 +108,12 @@ class Data_Preparation:
 
     ####################################################################################################################
     def get_list_of_chromatograms(self, NAMES):
-        chromatograms = dict()
+        self.chromatograms = dict()
         for name in NAMES:
-            chromatograms[name] = self.mzml_to_array(self.mzml_path + name)
+            self.chromatograms[name] = self.mzml_to_array(self.mzml_path + name)
 
 
-        return chromatograms
+        return self.chromatograms
 
     ####################################################################################################################
 
@@ -156,8 +158,8 @@ class Data_Preparation:
 
     ####################################################################################################################
 
-    def parse_msp_file(self, msp_file_path):
-        self.decomposition_compound_list = {}
+    def parse_msp_file_with_alignment_compounds(self, msp_file_path):
+        self.alignment_compound_list = {}
         with open(msp_file_path, 'r') as file:
             spectra = []
             Flag = False
@@ -165,7 +167,7 @@ class Data_Preparation:
                 line = line.strip()
                 if not line:
                     Flag = False
-                    self.decomposition_compound_list[name] = spectra
+                    self.alignment_compound_list[name] = spectra
                     spectra = []
                 elif line.startswith("Name:"):
                     name = line.split(": ", 1)[1]
@@ -206,3 +208,23 @@ class Data_Preparation:
 
                 rt_spectra.append([rt, array])
             self.spectra_from_csv[i] = rt_spectra
+
+    ####################################################################################################################
+
+    def comprimation_of_spectra(self):
+        '''
+        This function compresses the spectra to a smaller size from 0.1 to 1.0
+        :return:
+        '''
+        for i in self.chromatograms.keys():
+            chroma = self.chromatograms[i]
+            compressed_chroma = []
+            # iterate over the chromatogram and compress the spectra
+            # add first 5 elements, then the sum of the next 10 elements until the last 5 elements
+            compressed_chroma.append(chroma[0:5])
+            for j in range(5, len(chroma)-5, 10):
+                compressed_chroma.append(np.sum(chroma[j:j+10], axis=0))
+            compressed_chroma.append(chroma[-5:])
+            self.chromatograms[i] = np.array(compressed_chroma)
+
+
