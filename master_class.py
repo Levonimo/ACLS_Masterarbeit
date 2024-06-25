@@ -115,60 +115,24 @@ class Data_Preparation:
         return np.array(Chromatogramm)
 
     ####################################################################################################################
-    def get_list_of_chromatograms(self, NAMES):
-        self.chromatograms = dict()
-        for name in NAMES:
-            self.chromatograms[name] = self.mzml_to_array(self.mzml_path +'/'+ name)
-
+    def get_list_of_chromatograms(self, NAMES, Type = "FromMzml"):
+        if Type == "FromMzml":
+            self.chromatograms = dict()
+            for name in NAMES:
+                self.chromatograms[name] = self.mzml_to_array(self.mzml_path + '/' + name)
+        elif Type == "FromNPY":
+            self.chromatograms = np.load(NAMES, allow_pickle=True).item()
+        else:
+            raise ValueError("Type must be either 'FromMzml' or 'FromNPY'")
 
         return self.chromatograms
 
     ####################################################################################################################
 
     def get_chromatogram(self, name):
-        print(self.chromatograms[name])
+        return self.chromatograms[name]
 
-    ####################################################################################################################
-    '''
-    def get_similar_peak(self):
-        # compare each csv File with each other and return the similar peaks
-        # the similar peaks are defined as peaks which are in the same retention time window
-        # and have a similar "Model ion mz" value
 
-        # Liste aller Dateien im Ordner
-        files = os.listdir(self.csv_path)
-
-        # Filtere nur .csv Dateien
-        csv_files = [file for file in files if file.endswith('.csv')]
-
-        # Erstelle ein leeres Dictionary
-        similar_peaks = dict()
-
-        # Iteriere über alle Dateien
-        for file in csv_files:
-            # Lese die Datei
-            data = pd.read_csv(os.path.join(self.csv_path, file))
-
-            # Extrahiere die Retentionszeit
-            retention_time = data['Retention time']
-
-            # Extrahiere die Model ion mz
-            model_ion_mz = data['Model ion mz']
-
-            # Iteriere über alle Retentionszeiten
-            for rt, mz in zip(retention_time, model_ion_mz):
-                # Erstelle ein Tupel aus Retentionszeit und Model ion mz
-                peak = (rt, mz)
-
-                # Wenn der Peak nicht im Dictionary ist, füge ihn hinzu
-                if peak not in similar_peaks:
-                    similar_peaks[peak] = [file]
-                # Wenn der Peak schon im Dictionary ist, füge die Datei hinzu
-                else:
-                    similar_peaks[peak].append(file)
-
-        return similar_peaks
-    '''
     ####################################################################################################################
 
     def parse_msp_alignment_compounds(self, msp_file_path):
@@ -207,7 +171,6 @@ class Data_Preparation:
 
             # Umwandeln der resultierenden Liste in ein numpy-Array
             self.alignment_compound_list[i] = np.array(result)
-
 
 
     ####################################################################################################################
@@ -273,7 +236,7 @@ class Data_Preparation:
         # sort the rt_index
         rt_index = np.sort(rt_index)
 
-        return rt_index
+        return rt_index,match_matrix
 
 
     ####################################################################################################################
