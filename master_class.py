@@ -3,6 +3,8 @@ import subprocess
 import numpy as np
 import pandas as pd
 import pyopenms
+import copy as cp
+import math
 
 
 
@@ -28,11 +30,13 @@ class Data_Preparation:
     def convert_d_to_mzml(self):
         for file in os.listdir(self.path):
             if file.endswith(".D"):
-                command = f"msconvert {self.path} -o {self.mzml_path} --mzML"
-                subprocess.run(command, shell=True)
+                #check if file .D is already converted to .mzml
+                if not os.path.exists(self.mzml_path + '/' + file.replace(".D", ".mzML")):
+                    command = f"msconvert {self.path+file} -o {self.mzml_path} --mzML"
+                    subprocess.run(command, shell=True)
 
 
-    def get_name_of_mzml_files(self):
+    def get_name_mzml_files(self):
         return os.listdir(self.mzml_path)
 
 
@@ -79,8 +83,12 @@ class Data_Preparation:
         exp = pyopenms.MSExperiment()
         # get one name of a mzml files
         mzml_file = os.listdir(self.mzml_path)[0]
-        pyopenms.MzMLFile().load(mzml_file, exp)
-        rt = exp[0].getRT() / 60
+        pyopenms.MzMLFile().load(self.mzml_path+'/'+mzml_file, exp)
+        # a full list of retention times
+        rt = []
+        for spectrum in exp:
+            if spectrum.getMSLevel() == 1:
+                rt.append(spectrum.getRT()/60)
         return np.array(rt)
 
     ####################################################################################################################
@@ -110,13 +118,18 @@ class Data_Preparation:
     def get_list_of_chromatograms(self, NAMES):
         self.chromatograms = dict()
         for name in NAMES:
-            self.chromatograms[name] = self.mzml_to_array(self.mzml_path + name)
+            self.chromatograms[name] = self.mzml_to_array(self.mzml_path +'/'+ name)
 
 
         return self.chromatograms
 
     ####################################################################################################################
 
+    def get_chromatogram(self, name):
+        print(self.chromatograms[name])
+
+    ####################################################################################################################
+    '''
     def get_similar_peak(self):
         # compare each csv File with each other and return the similar peaks
         # the similar peaks are defined as peaks which are in the same retention time window
@@ -155,10 +168,10 @@ class Data_Preparation:
                     similar_peaks[peak].append(file)
 
         return similar_peaks
-
+    '''
     ####################################################################################################################
 
-    def parse_msp_file_with_alignment_compounds(self, msp_file_path):
+    def parse_msp_alignment_compounds(self, msp_file_path):
         self.alignment_compound_list = {}
         with open(msp_file_path, 'r') as file:
             spectra = []
@@ -180,11 +193,27 @@ class Data_Preparation:
                             continue
                         mz_int_pair =[float(x) for x in i.split()]
                         spectra.append(mz_int_pair)
+        mz_compresed = np.arange(20, 401, 1)
+
+        for i in self.alignment_compound_list.keys():
+            # Erstellen eines Dictionaries aus den gegebenen Daten für schnellen Zugriff
+            data_dict = {int(mz): intensity for mz, intensity in self.alignment_compound_list[i]}
+
+            # Durchlaufen der Ziel-Liste und Überprüfen auf vorhandene m/z-Werte
+            result = []
+            for mz in mz_compresed:
+                intensity = data_dict.get(mz, 0)  # Falls der m/z-Wert nicht gefunden wird, setze die Intensität auf 0
+                result.append([mz, intensity])
+
+            # Umwandeln der resultierenden Liste in ein numpy-Array
+            self.alignment_compound_list[i] = np.array(result)
+
+
 
     ####################################################################################################################
 
     def get_decomposition_compound_list(self):
-        return self.decomposition_compound_list
+        return self.alignment_compound_list
 
     ####################################################################################################################
 
@@ -211,20 +240,56 @@ class Data_Preparation:
 
     ####################################################################################################################
 
-    def comprimation_of_spectra(self):
+    def compression_of_spectra(self):
         '''
         This function compresses the spectra to a smaller size from 0.1 to 1.0
         :return:
         '''
         for i in self.chromatograms.keys():
             chroma = self.chromatograms[i]
-            compressed_chroma = []
             # iterate over the chromatogram and compress the spectra
             # add first 5 elements, then the sum of the next 10 elements until the last 5 elements
-            compressed_chroma.append(chroma[0:5])
-            for j in range(5, len(chroma)-5, 10):
-                compressed_chroma.append(np.sum(chroma[j:j+10], axis=0))
-            compressed_chroma.append(chroma[-5:])
-            self.chromatograms[i] = np.array(compressed_chroma)
+            compressed_chroma = np.sum(chroma[:,0:5], axis=1)
+            for j in range(5, np.shape(chroma)[1]-5, 10):
+                summed_columns = np.sum(chroma[:,j:j+10], axis=1)
+                compressed_chroma = np.vstack((compressed_chroma, summed_columns))
+            #compressed_chroma = np.vstack((compressed_chroma, np.sum(chroma[:,-5:], axis=1)))
+
+            compressed_chroma = np.transpose(compressed_chroma)
+
+            self.chromatograms[i] = compressed_chroma
 
 
+    ####################################################################################################################
+
+    def get_rt_of_alignment_compounds(self, name_chromatogram):
+        rt_index = []
+        for i in self.alignment_compound_list.keys():
+            chroma = cp.copy(self.chromatograms[name_chromatogram])
+            chroma = self.normalize_matrix(chroma)
+            alignment_spectra = cp.copy(self.alignment_compound_list[i][:,1])
+            match_matrix = np.dot(chroma, np.transpose(alignment_spectra))/10**4
+            rt_index.append(np.argmax(match_matrix))
+        # sort the rt_index
+        rt_index = np.sort(rt_index)
+
+        return rt_index
+
+
+    ####################################################################################################################
+
+    def normalize_matrix(self, array):
+        # if the array is n 2D array normalize each column
+        if len(np.shape(array)) > 1:
+            for i in range(np.shape(array)[0]):
+                array[i] = self.normalize_array(array[i])
+        else:
+            array = self.normalize_array(array)
+        return array
+
+    def normalize_array(self, array):
+        # Normalize the array to the interval [0, 1000]
+        #array = array - np.min(array)
+        array = array / np.max(array)
+        array = array * 999
+        return array
