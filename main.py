@@ -25,10 +25,11 @@ print('#########################################################################
 Data.parse_msp_alignment_compounds('F:/Downloads/Tenax_Decomposition.msp')
 
 Data.compression_of_spectra()
+
 rt = Data.get_retention_time()
 list_retentiontime = []
 for i in range(len(data_files)):
-    indecs, matrix = Data.get_rt_of_alignment_compounds(data_files[i])
+    indecs, matrix, pre_match = Data.get_rt_of_alignment_compounds(data_files[i])
     list_retentiontime.append(rt[indecs].tolist())
 print(list_retentiontime)
 
@@ -38,18 +39,39 @@ data_transposed = list(zip(*list_retentiontime))
 
 # Erstelle die Boxplots
 plt.boxplot(data_transposed)
-plt.xlabel('Spalten')
-plt.ylabel('Werte')
-plt.title('Boxplot für jede der 6 Spalten')
+# replace x-axis labels with compound names
+plt.xticks([1, 2, 3], ['Nonanal', 'Acetophenone', 'Benzoic acid'])
+
+plt.ylabel('Retention Time')
 plt.show()
+
+print('True RT : Nonanal 13.04, Acetophenone 16.99 , Benzoic acid 26.4')
 
 print('#############################################################################################################')
 
 # Make line plot of matrix with retention time
-plt.plot(rt, matrix)
-plt.plot(rt, np.sum(Data.get_chromatogram(data_files[-1]), axis = 1)/(7*10**4))
+plt.figure(figsize=(10, 8))
+# three subplots under each other
+plt.subplot(3, 1, 1)
+plt.plot(rt, np.sum(Data.get_chromatogram(data_files[-1]), axis = 1))#/(7*10**4))
+plt.ylabel('Intensity')
+plt.subplot(3, 1, 2)
+plt.plot(rt, pre_match[1])
+plt.ylabel('Similarity Score')
+plt.subplot(3, 1, 3)
+plt.plot(rt, matrix[1])
 plt.xlabel('Retention Time')
 plt.ylabel('Similarity Score')
 
-plt.title('Line Plot of Matrix with Retention Time')
 plt.show()
+
+print('#############################################################################################################')
+
+
+#Data.plot_chromatogram(data_files[7])
+
+print('#############################################################################################################')
+'''
+Data.set_comparison_chromatogram(data_files[-1])
+Data.aligned_chromatograms(data_files[4])
+'''
