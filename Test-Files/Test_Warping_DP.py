@@ -1,4 +1,4 @@
-import master_class as mc
+import Archiv.master_class_alt as mc
 import numpy as np
 import matplotlib.pyplot as plt
 

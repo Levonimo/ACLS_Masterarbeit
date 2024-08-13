@@ -1,5 +1,5 @@
 import numpy as np
-import master_class as mc
+import Archiv.master_class_alt as mc
 
 
 def correlation_optimized_warping_2d(reference, target, slack=10, segments=200):

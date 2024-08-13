@@ -1,6 +1,7 @@
 import numpy as np
 import master_class as mc
 
+
 import numpy as np
 
 
@@ -55,10 +56,11 @@ def correlation_optimized_warping(reference, target, slack=14, segments=100):
 
 # Example usage
 
-
-Data = mc.Data_Preparation("F:/Documents/MasterArbeit/Data")
+#PATH = "F:/Documents/MasterArbeit/Data"
+PATH = "D:/OneDrive - ZHAW/Masterarbeit/Data"
+Data = mc.DataPreparation(PATH)
 data_files = Data.get_name_mzml_files()
-Chromatograms = Data.get_list_of_chromatograms('F:/Documents/MasterArbeit/Data/Chromatograms.npy', Type = 'FromNPY')
+Chromatograms = Data.get_list_of_chromatograms(PATH+'/Chromatograms.npy', source_type = 'FromNPY')
 rt = Data.get_retention_time()
 # Example usage
 # Create example 2D GC-MS data
@@ -81,16 +83,16 @@ print("Warped Target Shape:", warped_target.shape)
 import matplotlib.pyplot as plt
 
 
-plt.plot(rt[3200:3500],reference[3200:3500])
-plt.plot(rt[3200:3500],target[3200:3500])
+plt.plot(rt,reference)
+plt.plot(rt,target)
 plt.xlabel("Retention Time")
 plt.ylabel("Intensity")
 plt.title("Original Data")
 plt.show()
 
 
-plt.plot(rt[3200:3500],reference[3200:3500])
-plt.plot(rt[3200:3500],warped_target[3200:3500])
+plt.plot(rt,reference)
+plt.plot(rt,warped_target)
 plt.xlabel("Retention Time")
 plt.ylabel("Intensity")
 plt.title("Warped Data")

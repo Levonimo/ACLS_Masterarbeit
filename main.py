@@ -1,10 +1,13 @@
 import master_function as mf
-import master_class as mc
+import Archiv.master_class_alt as mc
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 
-Data = mc.Data_Preparation("F:/Documents/MasterArbeit/Data")
+#PATH = "F:/Documents/MasterArbeit/Data"
+PATH = "D:/OneDrive - ZHAW/Masterarbeit/Data"
+
+Data = mc.Data_Preparation(PATH)
 Data.convert_d_to_mzml()
 
 #Data.interact_with_msdial("F:/ProgramFiles/MSDIAL/MsdialConsoleApp.exe", "GCMS")
@@ -13,14 +16,14 @@ Data.convert_d_to_mzml()
 data_files = Data.get_name_mzml_files()
 
 # Safe the Dictionary Chromatograms to a npy file if the file is not already existing
-if not os.path.exists('F:/Documents/MasterArbeit/Data/Chromatograms.npy'):
+if not os.path.exists(PATH+'/Chromatograms.npy'):
     Chromatograms = Data.get_list_of_chromatograms(data_files)
-    np.save('F:/Documents/MasterArbeit/Data/Chromatograms.npy', Chromatograms)
+    np.save(PATH+'/Chromatograms.npy', Chromatograms)
 else:
-    Chromatograms = Data.get_list_of_chromatograms('F:/Documents/MasterArbeit/Data/Chromatograms.npy', Type = 'FromNPY')
+    Chromatograms = Data.get_list_of_chromatograms(PATH+'/Chromatograms.npy', source_type = 'FromNPY')
 
 print('#############################################################################################################')
-
+'''
 # import ms search library with msp file
 Data.parse_msp_alignment_compounds('F:/Downloads/Tenax_Decomposition.msp')
 
@@ -69,7 +72,7 @@ print('#########################################################################
 
 
 #Data.plot_chromatogram(data_files[7])
-
+'''
 print('#############################################################################################################')
 '''
 Data.set_comparison_chromatogram(data_files[-1])
