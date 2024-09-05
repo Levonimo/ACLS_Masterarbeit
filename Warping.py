@@ -55,9 +55,12 @@ def correlation_optimized_warping(reference, target, slack=14, segments=100):
 
 
 # Example usage
-
+'''
 #PATH = "F:/Documents/MasterArbeit/Data"
-PATH = "D:/OneDrive - ZHAW/Masterarbeit/Data"
+#PATH = "D:/OneDrive - ZHAW/Masterarbeit/Data"
+PATH = 'C:/Users/wilv/OneDrive - ZHAW (1)/Masterarbeit/Data'
+
+
 Data = mc.DataPreparation(PATH)
 data_files = Data.get_name_mzml_files()
 Chromatograms = Data.get_list_of_chromatograms(PATH+'/Chromatograms.npy', source_type = 'FromNPY')
@@ -97,3 +100,5 @@ plt.xlabel("Retention Time")
 plt.ylabel("Intensity")
 plt.title("Warped Data")
 plt.show()
+
+'''

@@ -7,6 +7,8 @@ import copy as cp
 import math
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 
 from Warping import correlation_optimized_warping as COW
@@ -121,7 +123,8 @@ class DataPreparation:
 
         return np.array(chromatogram)
 
-    def get_list_of_chromatograms(self, names, source_type="FromMzml"):
+
+    def get_list_of_chromatograms(self, names, source_type):
         if not isinstance(names, list) and not isinstance(names, str):
             raise TypeError("names must be a list of strings or a single string.")
         if not all(isinstance(name, str) for name in names) and not isinstance(names, str):
@@ -222,3 +225,50 @@ class DataPreparation:
     def warping(self, reference, target):
         warped_target, _ = COW(reference,target)
         return warped_target
+
+    def perform_pca(self,chromatograms, n_components=10):
+        """
+        Führt eine Principal Component Analysis (PCA) auf einer Matrix von Gaschromatogrammen durch.
+
+        Parameters:
+        chromatograms (np.array): Die Eingabematrix von Gaschromatogrammen.
+        n_components (int): Die Anzahl der Hauptkomponenten, die extrahiert werden sollen.
+
+        Returns:
+        Tuple: Tuple mit den folgenden Werten:
+            - pca (PCA-Objekt): Das PCA-Objekt, das die Hauptkomponenten enthält.
+            - scores (np.array): Die Scores der Daten in den neuen Hauptkomponenten.
+            - loadings (np.array): Die Loadings (Ladungen) der Variablen.
+            - explained_variance_ratio (np.array): Der Anteil der Varianz, die durch jede Hauptkomponente erklärt wird.
+        """
+        chromatograms = np.array([chromatograms[key] for key in chromatograms.keys()])
+        # Standardisierung der Daten
+        scaler = StandardScaler()
+        chromatograms_std = scaler.fit_transform(chromatograms)
+
+        # PCA durchführen
+        pca = PCA(n_components=n_components)
+        scores = pca.fit_transform(chromatograms_std)
+
+        # Ladungen (Loadings) sind die Koeffizienten der linearen Kombinationen der ursprünglichen Variablen
+        loadings = pca.components_.T
+
+        # Anteil der erklärten Varianz
+        explained_variance_ratio = pca.explained_variance_ratio_
+
+        return pca, scores, loadings, explained_variance_ratio
+
+    def PCA(self, Chromatograms):
+        Chromatograms = np.array([Chromatograms[key] for key in Chromatograms.keys()])
+        Chromatograms = Chromatograms.T
+        #Chromatograms = Chromatograms - np.mean(Chromatograms, axis = 0)
+        covariance_matrix = np.cov(Chromatograms.T)
+        eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
+        idx = np.argsort(eigenvalues)[::-1]
+        eigenvalues = eigenvalues[idx]
+        eigenvectors = eigenvectors[:, idx]
+        # Calculate Loadings and Scores
+        scores = np.dot(Chromatograms, eigenvectors)
+        loadings = np.dot(scores, eigenvectors.T)
+        return scores, loadings, eigenvalues, eigenvectors
+

@@ -1,13 +1,14 @@
 import master_function as mf
-import Archiv.master_class_alt as mc
+import master_class as mc
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 
 #PATH = "F:/Documents/MasterArbeit/Data"
-PATH = "D:/OneDrive - ZHAW/Masterarbeit/Data"
+#PATH = "D:/OneDrive - ZHAW/Masterarbeit/Data"
+PATH = 'C:/Users/wilv/OneDrive - ZHAW (1)/Masterarbeit/Data'
 
-Data = mc.Data_Preparation(PATH)
+Data = mc.DataPreparation(PATH)
 Data.convert_d_to_mzml()
 
 #Data.interact_with_msdial("F:/ProgramFiles/MSDIAL/MsdialConsoleApp.exe", "GCMS")
@@ -72,9 +73,139 @@ print('#########################################################################
 
 
 #Data.plot_chromatogram(data_files[7])
-'''
+
 print('#############################################################################################################')
-'''
+
 Data.set_comparison_chromatogram(data_files[-1])
 Data.aligned_chromatograms(data_files[4])
+
+
+print('#############################################################################################################')
+
+Warped_chromatograms = dict()
+
+for i in range(len(data_files)-1):
+    Warped_chromatograms[data_files[i]] = Data.warping(np.sum(Chromatograms[data_files[-1]], axis = 1), np.sum(Chromatograms[data_files[i]], axis = 1))
+
+Warped_chromatograms[data_files[-1]] = np.sum(Chromatograms[data_files[-1]], axis = 1)
+
+np.save(PATH+'/Warped_chromatograms.npy', Warped_chromatograms)
 '''
+
+Warped_chromatograms = np.load(PATH+'/Warped_chromatograms.npy', allow_pickle=True).item()
+print('#############################################################################################################')
+
+rt = Data.get_retention_time()
+'''
+# Plot the Warped Chromatograms
+plt.figure(figsize=(12, 5))
+for i in range(len(data_files)):
+    plt.plot(rt, Warped_chromatograms[data_files[i]])
+plt.xlabel('Retention Time')
+plt.ylabel('Intensity')
+plt.gca().spines['right'].set_visible(False)
+plt.gca().spines['top'].set_visible(False)
+plt.show()
+
+print('#############################################################################################################')
+
+# Plot the Original Chromatograms
+plt.figure(figsize=(12, 5))
+for i in range(len(data_files)):
+    plt.plot(rt, np.sum(Chromatograms[data_files[i]], axis = 1))
+plt.xlabel('Retention Time')
+plt.ylabel('Intensity')
+plt.gca().spines['right'].set_visible(False)
+plt.gca().spines['top'].set_visible(False)
+plt.show()
+'''
+print('#############################################################################################################')
+pca, scores, loadings, explained_variance_ratio = Data.perform_pca(Warped_chromatograms)
+#scores, loadings, eigenvalues, eigenvectors = Data.PCA(Warped_chromatograms)
+
+# Plot the PCA
+plt.figure(figsize=(12, 5))
+#plt.plot(eigenvalues[:4]/np.sum(eigenvalues), 'o-')
+plt.plot(explained_variance_ratio, 'o-')
+plt.xlabel('Principal Component')
+plt.ylabel('Eigenvalue')
+plt.show()
+
+print('#############################################################################################################')
+
+
+'''
+# Plot the PC1 - PC5
+plt.figure(figsize=(12, 5))
+for i in range(5):
+    plt.plot(rt, eigenvectors[:,i])
+plt.xlabel('Retention Time')
+plt.ylabel('Intensity')
+plt.gca().spines['right'].set_visible(False)
+plt.gca().spines['top'].set_visible(False)
+plt.legend(['PC1', 'PC2', 'PC3', 'PC4', 'PC5'])
+plt.show()
+'''
+
+print('#############################################################################################################')
+
+# plot the scores of the first two PCs
+plt.figure(figsize=(12, 5))
+for i in range(len(data_files)):
+    if 'OOO' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'silver')
+    elif 'SOO' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'bisque')
+    elif 'SOL' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'orange')
+    elif 'SGO' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'lightgreen')
+    elif 'SGL' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'forestgreen')
+    else:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'blue')
+    #plt.text(scores[i, 0], scores[i, 1], data_files[i])
+#plt.scatter(scores[:, 0], scores[:, 1])
+plt.xlabel('PC1')
+plt.ylabel('PC2')
+plt.gca().spines['right'].set_visible(False)
+plt.gca().spines['top'].set_visible(False)
+plt.show()
+
+print('#############################################################################################################')
+Chromatograms2 = dict()
+for i in range(len(data_files)):
+    Chromatograms2[data_files[i]] = np.sum(Chromatograms[data_files[i]], axis = 1)
+pca, scores, loadings, explained_variance_ratio = Data.perform_pca(Chromatograms2)
+
+
+# Plot the PCA
+plt.figure(figsize=(12, 5))
+#plt.plot(eigenvalues[:4]/np.sum(eigenvalues), 'o-')
+plt.plot(explained_variance_ratio, 'o-')
+plt.xlabel('Principal Component')
+plt.ylabel('Eigenvalue')
+plt.show()
+
+# plot the scores of the first two PCs
+plt.figure(figsize=(12, 5))
+for i in range(len(data_files)):
+    if 'OOO' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'silver')
+    elif 'SOO' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'bisque')
+    elif 'SOL' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'orange')
+    elif 'SGO' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'lightgreen')
+    elif 'SGL' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'forestgreen')
+    else:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'blue')
+    #plt.text(scores[i, 0], scores[i, 1], data_files[i])
+#plt.scatter(scores[:, 0], scores[:, 1])
+plt.xlabel('PC1')
+plt.ylabel('PC2')
+plt.gca().spines['right'].set_visible(False)
+plt.gca().spines['top'].set_visible(False)
+plt.show()
