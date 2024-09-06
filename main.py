@@ -153,20 +153,20 @@ print('#########################################################################
 plt.figure(figsize=(12, 5))
 for i in range(len(data_files)):
     if 'OOO' in data_files[i]:
-        plt.scatter(scores[i, 0], scores[i, 1], color = 'silver')
+        plt.scatter(scores[i, 2], scores[i, 1], color = 'silver')
     elif 'SOO' in data_files[i]:
-        plt.scatter(scores[i, 0], scores[i, 1], color = 'bisque')
+        plt.scatter(scores[i, 2], scores[i, 1], color = 'bisque')
     elif 'SOL' in data_files[i]:
-        plt.scatter(scores[i, 0], scores[i, 1], color = 'orange')
+        plt.scatter(scores[i, 2], scores[i, 1], color = 'orange')
     elif 'SGO' in data_files[i]:
-        plt.scatter(scores[i, 0], scores[i, 1], color = 'lightgreen')
+        plt.scatter(scores[i, 2], scores[i, 1], color = 'lightgreen')
     elif 'SGL' in data_files[i]:
-        plt.scatter(scores[i, 0], scores[i, 1], color = 'forestgreen')
+        plt.scatter(scores[i, 2], scores[i, 1], color = 'forestgreen')
     else:
-        plt.scatter(scores[i, 0], scores[i, 1], color = 'blue')
-    #plt.text(scores[i, 0], scores[i, 1], data_files[i])
+        plt.scatter(scores[i, 2], scores[i, 1], color = 'blue')
+    plt.text(scores[i, 2], scores[i, 1], data_files[i])
 #plt.scatter(scores[:, 0], scores[:, 1])
-plt.xlabel('PC1')
+plt.xlabel('PC3')
 plt.ylabel('PC2')
 plt.gca().spines['right'].set_visible(False)
 plt.gca().spines['top'].set_visible(False)
@@ -202,10 +202,62 @@ for i in range(len(data_files)):
         plt.scatter(scores[i, 0], scores[i, 1], color = 'forestgreen')
     else:
         plt.scatter(scores[i, 0], scores[i, 1], color = 'blue')
-    #plt.text(scores[i, 0], scores[i, 1], data_files[i])
+    plt.text(scores[i, 0], scores[i, 1], data_files[i])
 #plt.scatter(scores[:, 0], scores[:, 1])
 plt.xlabel('PC1')
 plt.ylabel('PC2')
 plt.gca().spines['right'].set_visible(False)
 plt.gca().spines['top'].set_visible(False)
+plt.show()
+
+
+print('#############################################################################################################')
+
+import seaborn as sns
+from sklearn.cluster import KMeans
+from sklearn.neighbors import NearestNeighbors
+from scipy.cluster.hierarchy import dendrogram, linkage
+from sklearn.decomposition import PCA
+
+# Chromatogramme: Daten in Form eines 2D-Arrays, wo jede Zeile ein Chromatogramm darstellt
+# Angenommen, PCA wurde schon durchgeführt und Scores sind die Ergebnisse
+# Chromatograms -> die ursprünglichen Daten
+
+# Anzahl der Cluster für K-Means
+n_clusters = 3
+
+# K-Means Clustering auf die Scores anwenden
+kmeans = KMeans(n_clusters=n_clusters)
+cluster_labels = kmeans.fit_predict(scores)
+
+# PCA scatter plot mit KMeans-Clustering-Ergebnis
+plt.figure(figsize=(8,6))
+plt.scatter(scores[:, 0], scores[:, 1], c=cluster_labels, cmap='viridis', marker='o')
+plt.title(f'PCA Plot mit {n_clusters}-Means Clustering')
+plt.xlabel('PCA 1')
+plt.ylabel('PCA 2')
+plt.colorbar(label='Cluster Label')
+plt.show()
+
+# K-nearest neighbors
+n_neighbors = 5
+nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(scores)
+distances, indices = nbrs.kneighbors(scores)
+
+# Nearest neighbors für ein Chromatogramm anzeigen
+chromatogram_idx = 6  # Beispielhaftes Chromatogramm
+print(f"Die nächsten {n_neighbors} Nachbarn für Chromatogramm {chromatogram_idx}:")
+print(indices[chromatogram_idx])
+
+# Hierarchisches Clustering (Dendrogramm)
+linked = linkage(scores, 'ward')
+
+plt.figure(figsize=(10, 7))
+dendrogram(linked,
+           orientation='top',
+           distance_sort='descending',
+           show_leaf_counts=True)
+plt.title("Dendrogram (Hierarchisches Clustering)")
+plt.xlabel('Chromatogramm Index')
+plt.ylabel('Abstand')
 plt.show()
