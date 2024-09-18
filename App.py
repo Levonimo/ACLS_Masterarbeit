@@ -1,60 +1,178 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QTextEdit
-from master_class import DataPreparation  # Import der Klasse
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QTextEdit, QHBoxLayout, QGridLayout
+from PyQt5.QtWidgets import QDialog, QListWidget
+from PyQt5.QtGui import QPixmap
+import master_class as mc
+from PyQt5.QtCore import Qt
 
-class FolderSelector(QWidget):
+
+class FileSelectionWindow(QDialog):
+    def __init__(self, file_names, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle('Select a File')
+        self.setGeometry(150, 150, 400, 300)
+
+        layout = QVBoxLayout()
+
+        self.list_widget = QListWidget()
+        self.list_widget.addItems(file_names)
+        layout.addWidget(self.list_widget)
+
+        self.select_button = QPushButton('Select')
+        self.select_button.clicked.connect(self.select_file)
+        layout.addWidget(self.select_button)
+
+        self.setLayout(layout)
+        self.selected_file = None
+
+    def select_file(self):
+        selected_items = self.list_widget.selectedItems()
+        if selected_items:
+            self.selected_file = selected_items[0].text()
+            self.accept()
+
+
+
+class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('Ordnerauswahl')
+        # Set window title and size
+        self.setWindowTitle('GUI Nachbau')
+        self.setGeometry(100, 100, 800, 600)
 
-        # Layout und Widgets
-        layout = QVBoxLayout()
+        # Hauptlayout - ein Gitterlayout
+        grid = QGridLayout()
+        self.setLayout(grid)
 
-        self.label = QLabel('Kein Ordner ausgewählt', self)
-        layout.addWidget(self.label)
-
+        # Buttons in die erste Spalte
         self.btn_select = QPushButton('Ordner auswählen', self)
-        self.btn_select.clicked.connect(self.showDialog)
-        layout.addWidget(self.btn_select)
+        self.btn_select.clicked.connect(self.selectFolder)
+        grid.addWidget(self.btn_select, 0, 0)
 
-        self.btn_initialize = QPushButton('Initialize DataPreparation', self)
-        self.btn_initialize.clicked.connect(self.initializeDataPreparation)
-        self.btn_initialize.setEnabled(False)  # Deaktivieren, bis ein Ordner ausgewählt wurde
-        layout.addWidget(self.btn_initialize)
+        self.btn_init = QPushButton('Initialize DataPreparation', self)
+        self.btn_init.clicked.connect(self.initializeDataPreparation)
+        self.btn_init.setEnabled(False)
+        grid.addWidget(self.btn_init, 1, 0)
 
-        # QTextEdit Feld für die Ausgabe
+        self.btn_show_files = QPushButton('Show Name of all Files', self)
+        self.btn_show_files.clicked.connect(self.ShowNameOfAllFiles)
+        self.btn_show_files.setEnabled(False)
+        grid.addWidget(self.btn_show_files, 2, 0)
+
+        self.btn_select_file = QPushButton('Select a File', self)
+        self.btn_select_file.clicked.connect(self.openFileSelectionWindow)
+        self.btn_select_file.setEnabled(False)
+        grid.addWidget(self.btn_select_file, 3, 0)
+
+        self.btn_warp = QPushButton('Performe Warping', self)
+        self.btn_warp.clicked.connect(self.PerformeWarping)
+        self.btn_warp.setEnabled(False)
+        grid.addWidget(self.btn_warp, 4, 0)
+
+        # Buttons in die erste Spalte
+        for i in range(5, 8):
+            button = QPushButton(f'Button {i + 1}', self)
+            grid.addWidget(button, i, 0)  # Positioniere die Buttons in Spalte 0, Zeilen 0-7
+
+        # Textfeld in die erste Reihe, zweite Spalte
         self.output_field = QTextEdit(self)
-        self.output_field.setReadOnly(True)  # Nur Lesezugriff
-        layout.addWidget(self.output_field)
+        self.output_field.setPlainText("Waiting for input...")
+        self.output_field.setReadOnly(True)
+        grid.addWidget(self.output_field, 0, 1, 8, 1)  # Textfeld über 4 Zeilen
 
-        self.setLayout(layout)
+        # Bildfelder in die zweite und dritte Reihe, zweite Spalte
+        image_top = QLabel('Bildfeld 1', self)
+        image_top.setPixmap(QPixmap())  # Bild kann später hinzugefügt werden
+        image_top.setStyleSheet("border: 1px solid black")
+        image_top.setAlignment(Qt.AlignCenter)
+        grid.addWidget(image_top, 8, 0, 2, 3)  # Erste Bild in Zeile 4
+
+        image_low = QLabel('Bildfeld 2', self)
+        image_low.setPixmap(QPixmap())  # Bild kann später hinzugefügt werden
+        image_low.setStyleSheet("border: 1px solid black")
+        image_low.setAlignment(Qt.AlignCenter)
+        grid.addWidget(image_low, 10, 0, 2, 3)  # Zweite Bild in Zeile 5
+
+        # Layout-Anpassungen für die Spaltenbreite
+        grid.setColumnStretch(0, 1)  # Buttons Spalte
+        grid.setColumnStretch(1, 2)  # Textfeld und Bildfelder Spalte
+
         self.selected_folder = None
         self.data_preparation = None
 
-    def showDialog(self):
+    def selectFolder(self):
         # Öffnet einen Dialog zum Auswählen eines Ordners
         folder_path = QFileDialog.getExistingDirectory(self, 'Ordner auswählen')
 
         if folder_path:
             self.selected_folder = folder_path
-            self.label.setText(f'Gewählter Ordner: {folder_path}')
-            self.btn_initialize.setEnabled(True)  # Aktivieren, wenn ein Ordner ausgewählt wurde
+            self.print_to_output(f'Gewählter Ordner: {folder_path}')
+            self.btn_init.setEnabled(True)  # Aktivieren, wenn ein Ordner ausgewählt wurde
         else:
-            self.label.setText('Kein Ordner ausgewählt')
+            self.print_to_output('Kein Ordner ausgewählt')
 
     def initializeDataPreparation(self):
         if self.selected_folder:
-            self.data_preparation = DataPreparation(self.selected_folder)
+            self.data_preparation = mc.DataPreparation(self.selected_folder)
             self.print_to_output(f'DataPreparation initialized with folder: {self.selected_folder}')
+            self.chromatograms = {}
+            self.npy_import()
+            self.btn_show_files.setEnabled(True)
+            self.btn_select_file.setEnabled(True)
+            self.btn_warp.setEnabled(True)
 
     def print_to_output(self, text):
         self.output_field.append(text)  # Fügt Text am Ende des QTextEdit hinzu
 
+    def ShowNameOfAllFiles(self):
+        if self.data_preparation:
+            self.print_to_output('Files in selected folder:')
+            file_names = self.data_preparation.get_file_names()
+            for i in range(0, len(file_names), 4):
+                self.print_to_output(' | '.join(file_names[i:i + 4]))
+
+    def openFileSelectionWindow(self):
+        if self.data_preparation:
+            file_names = self.data_preparation.get_file_names()
+            dialog = FileSelectionWindow(file_names, self)
+            if dialog.exec_():
+                self.selected_file = dialog.selected_file
+                self.print_to_output(f'Reference file: {self.selected_file}')
+
+    def npy_import(self):
+        if self.data_preparation:
+            npy_files = [file for file in os.listdir(self.selected_folder) if file.endswith('.npy')]
+            if npy_files:
+                dialog = FileSelectionWindow(npy_files, self)
+                if dialog.exec_():
+                    self.selected_file = dialog.selected_file
+                    self.print_to_output(f'Chromatograms from {self.selected_file} loaded.')
+                    self.chromatograms = np.load(self.selected_folder + '/' + self.selected_file, allow_pickle=True).item()
+            else:
+                self.data_preparation.get_list_of_chromatograms(self.selected_folder + '/Chromatograms.npy', files_list=self.data_preparation.get_file_names())
+                self.print_to_output('No .npy files found. Created new Chromatograms.npy file.')
+
+    def PerformeWarping(self):
+        if self.data_preparation and self.selected_file:
+            reference = self.data_preparation.get_chromatogram(self.selected_file)
+            data_files = self.data_preparation.get_file_names()
+            self.warped_chromatograms = {}
+            for file in data_files:
+                if file != self.selected_file:
+                    target = self.data_preparation.get_chromatogram(file)
+                    warped_target, warp_path = mc.COW(reference, target)
+                    self.warped_chromatograms[file] = warped_target
+                    self.print_to_output(f'Warping Path for {file}: {warp_path}')
+                else:
+                    self.warped_chromatograms[file] = reference
+
+
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = FolderSelector()
+    ex = MainWindow()
     ex.show()
     sys.exit(app.exec_())

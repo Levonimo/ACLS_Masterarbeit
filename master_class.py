@@ -37,6 +37,8 @@ class DataPreparation:
 
         self.mZ_totlist = np.round(np.arange(20, 400.1, 0.1), 1)
 
+        self.convert_d_to_mzml()
+
     def convert_d_to_mzml(self):
         for file in os.listdir(self.path):
             if file.endswith(".D"):
@@ -45,8 +47,11 @@ class DataPreparation:
                     command = f"msconvert {os.path.join(self.path, file)} -o {self.mzml_path} --mzML"
                     subprocess.run(command, shell=True, check=True)
 
-    def get_name_mzml_files(self):
-        return os.listdir(self.mzml_path)
+    def get_file_names(self):
+        files = os.listdir(self.mzml_path)
+        #remove the .mzML ending
+        files = [file.replace('.mzML','') for file in files]
+        return files
 
     def interact_with_msdial(self, msdial_path, param_file_name, type="gcms"):
         if not isinstance(msdial_path, str):
@@ -124,7 +129,31 @@ class DataPreparation:
         return np.array(chromatogram)
 
 
-    def get_list_of_chromatograms(self, names, source_type):
+    def get_list_of_chromatograms(self, file, file_list = None):
+        if not isinstance(file, str):
+            raise TypeError("file must be a string.")
+        if not isinstance(file_list, list) or not all(isinstance(name, str) for name in file_list):
+            raise TypeError("file_list must be a list of strings.")
+        if not file:
+            file = "Chromatograms"
+
+        if file_list:
+            if not os.path.isfile(self.path+file+'.npy'):
+                self.chromatograms = {}
+                for name in file_list:
+                    file_path = os.path.join(self.mzml_path, name+'.mzML')
+                    if not os.path.isfile(file_path):
+                        raise ValueError(f"{file_path} does not exist.")
+                    self.chromatograms[name] = self.mzml_to_array(file_path)
+                np.save(self.path+file+'.npy', self.chromatograms)
+            else:
+                np.load(self.path+file+'.npy', allow_pickle=True).item()
+        else:
+            if not os.path.isfile(self.path+file+'.npy'):
+                raise ValueError(f"{file}.npy does not exist and no name list is given.")
+            else:
+                np.load(self.path+file+'.npy', allow_pickle=True).item()
+        '''        
         if not isinstance(names, list) and not isinstance(names, str):
             raise TypeError("names must be a list of strings or a single string.")
         if not all(isinstance(name, str) for name in names) and not isinstance(names, str):
@@ -133,7 +162,7 @@ class DataPreparation:
             raise ValueError("source_type must be either 'FromMzml' or 'FromNPY'.")
 
         self.chromatograms = {}
-
+        
         if source_type == "FromMzml":
             for name in names:
                 file_path = os.path.join(self.mzml_path, name)
@@ -144,7 +173,7 @@ class DataPreparation:
             if not os.path.isfile(names):
                 raise ValueError(f"{names} is not a valid file path.")
             self.chromatograms = np.load(names, allow_pickle=True).item()
-
+        '''
         return self.chromatograms
 
     def get_chromatogram(self, name):

@@ -4,24 +4,21 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 
-#PATH = "F:/Documents/MasterArbeit/Data"
+PATH = "F:/Documents/MasterArbeit/Data"
 #PATH = "D:/OneDrive - ZHAW/Masterarbeit/Data"
-PATH = 'C:/Users/wilv/OneDrive - ZHAW (1)/Masterarbeit/Data'
+#PATH = 'C:/Users/wilv/OneDrive - ZHAW (1)/Masterarbeit/Data'
 
 Data = mc.DataPreparation(PATH)
-Data.convert_d_to_mzml()
 
 #Data.interact_with_msdial("F:/ProgramFiles/MSDIAL/MsdialConsoleApp.exe", "GCMS")
 #Data.convert_msdial_to_csv()
 
-data_files = Data.get_name_mzml_files()
+data_files = Data.get_file_names()
+print(data_files)
+
 
 # Safe the Dictionary Chromatograms to a npy file if the file is not already existing
-if not os.path.exists(PATH+'/Chromatograms.npy'):
-    Chromatograms = Data.get_list_of_chromatograms(data_files)
-    np.save(PATH+'/Chromatograms.npy', Chromatograms)
-else:
-    Chromatograms = Data.get_list_of_chromatograms(PATH+'/Chromatograms.npy', source_type = 'FromNPY')
+Chromatograms = Data.get_list_of_chromatograms('Chromatograms', data_files)
 
 print('#############################################################################################################')
 '''
