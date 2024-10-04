@@ -35,7 +35,7 @@ class DataPreparation:
         self.csv_path = os.path.join(self.path, "CSV")
         os.makedirs(self.csv_path, exist_ok=True)
 
-        self.mZ_totlist = np.round(np.arange(20, 400.1, 0.1), 1)
+        self.mZ_totlist = np.round(np.arange(35, 400.1, 0.1), 1)
 
         self.convert_d_to_mzml()
 
@@ -52,7 +52,7 @@ class DataPreparation:
         #remove the .mzML ending
         files = [file.replace('.mzML','') for file in files]
         return files
-
+    '''
     def interact_with_msdial(self, msdial_path, param_file_name, type="gcms"):
         if not isinstance(msdial_path, str):
             raise TypeError("msdial_path must be a string.")
@@ -89,7 +89,7 @@ class DataPreparation:
             data.to_csv(os.path.join(self.csv_path, csv_file_name), index=False)
 
         print(f'Converted {len(msdial_files)} .msdial files to .csv')
-
+    '''
     def get_retention_time(self):
         exp = pyopenms.MSExperiment()
         mzml_files = os.listdir(self.mzml_path)
@@ -125,7 +125,7 @@ class DataPreparation:
                 full_intensity[bins - 1] = intensity
 
                 chromatogram.append(full_intensity.tolist())
-
+        chromatogram = self.compression_of_spectra(np.array(chromatogram))
         return np.array(chromatogram)
 
 
@@ -249,7 +249,22 @@ class DataPreparation:
         norm_factor[norm_factor == 0] = 1  # Avoid division by zero
         return chromatogram / norm_factor[:, None]
     
+    def compression_of_spectra(self, chromatogram):
+        '''
+        This function compresses the spectra to a bigger step size from 0.1 to 1
+        :return:
+        '''
+        compressed_chroma = np.sum(chromatogram[:,0:7], axis=1)
+        # iterate over the chromatogram and compress the spectra
+        # add first 5 elements, then the sum of the next 10 elements until the last 5 elements
+        for j in range(7, np.shape(chromatogram)[1]-3, 10):
+            summed_columns = np.sum(chromatogram[:,j:j+10], axis=1)
+            compressed_chroma = np.vstack((compressed_chroma, summed_columns))
+        #compressed_chroma = np.vstack((compressed_chroma, np.sum(chroma[:,-5:], axis=1)))
 
+        compressed_chroma = np.transpose(compressed_chroma)
+
+        return compressed_chroma
 
     def warping(self, reference, target):
         warped_target, _ = COW(reference,target)

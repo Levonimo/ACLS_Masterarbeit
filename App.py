@@ -1,10 +1,36 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QTextEdit, QHBoxLayout, QGridLayout
-from PyQt5.QtWidgets import QDialog, QListWidget
+from PyQt5.QtWidgets import QDialog, QListWidget, QLineEdit
 from PyQt5.QtGui import QPixmap
 import master_class as mc
 from PyQt5.QtCore import Qt
+import os
+import numpy as np
 
+class InputDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle('Input Required')
+        self.setGeometry(200, 200, 300, 100)
+
+        layout = QVBoxLayout()
+
+        self.label = QLabel('Please enter a word:', self)
+        layout.addWidget(self.label)
+
+        self.input_field = QLineEdit(self)
+        layout.addWidget(self.input_field)
+
+        self.submit_button = QPushButton('Submit', self)
+        self.submit_button.clicked.connect(self.submit)
+        layout.addWidget(self.submit_button)
+
+        self.setLayout(layout)
+        self.input_text = None
+
+    def submit(self):
+        self.input_text = self.input_field.text()
+        self.accept()
 
 class FileSelectionWindow(QDialog):
     def __init__(self, file_names, parent=None):
@@ -120,6 +146,7 @@ class MainWindow(QWidget):
             self.print_to_output(f'DataPreparation initialized with folder: {self.selected_folder}')
             self.chromatograms = {}
             self.npy_import()
+            print('b')
             self.btn_show_files.setEnabled(True)
             self.btn_select_file.setEnabled(True)
             self.btn_warp.setEnabled(True)
@@ -139,25 +166,31 @@ class MainWindow(QWidget):
             file_names = self.data_preparation.get_file_names()
             dialog = FileSelectionWindow(file_names, self)
             if dialog.exec_():
-                self.selected_file = dialog.selected_file
-                self.print_to_output(f'Reference file: {self.selected_file}')
+                self.selected_reference_file = dialog.selected_file
+                self.print_to_output(f'Reference file: {self.selected_reference_file}')
 
     def npy_import(self):
-        if self.data_preparation:
+        if self.selected_folder:
             npy_files = [file for file in os.listdir(self.selected_folder) if file.endswith('.npy')]
+
             if npy_files:
                 dialog = FileSelectionWindow(npy_files, self)
                 if dialog.exec_():
-                    self.selected_file = dialog.selected_file
+                    self.selected_Chromatograms = dialog.selected_file
                     self.print_to_output(f'Chromatograms from {self.selected_file} loaded.')
-                    self.chromatograms = np.load(self.selected_folder + '/' + self.selected_file, allow_pickle=True).item()
+                    self.chromatograms = np.load(self.selected_folder + '/' + self.selected_Chromatograms, allow_pickle=True).item()
             else:
-                self.data_preparation.get_list_of_chromatograms(self.selected_folder + '/Chromatograms.npy', files_list=self.data_preparation.get_file_names())
-                self.print_to_output('No .npy files found. Created new Chromatograms.npy file.')
+                input_dialog = InputDialog(self)
+                if input_dialog.exec_():
+                    input_word = input_dialog.input_text
+                    self.print_to_output(f'New File Named: {input_word}.npy')
+                    self.chromatograms = self.data_preparation.get_list_of_chromatograms(self.selected_folder + input_word+'.npy',
+                                                                    files_list=self.data_preparation.get_file_names())
+                    self.selected_Chromatograms = f'{input_word}.npy'
 
     def PerformeWarping(self):
         if self.data_preparation and self.selected_file:
-            reference = self.data_preparation.get_chromatogram(self.selected_file)
+            reference = self.data_preparation.get_chromatogram(self.selected_reference_file)
             data_files = self.data_preparation.get_file_names()
             self.warped_chromatograms = {}
             for file in data_files:

@@ -1,11 +1,11 @@
-import Archiv.master_class_alt as mc
+import master_class as mc
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 Data = mc.DataPreparation("F:/Documents/MasterArbeit/Data")
-data_files = Data.get_name_mzml_files()
-Chromatograms = Data.get_list_of_chromatograms('F:/Documents/MasterArbeit/Data/Chromatograms.npy', Type = 'FromNPY')
+data_files = Data.get_file_names()
+Chromatograms = Data.get_list_of_chromatograms('Chromatograms_short', data_files)
 rt = Data.get_retention_time()
 # Example usage
 # Create example 2D GC-MS data
@@ -88,7 +88,8 @@ def correlation_optimized_warping(reference, target, segment_length=100, slack=5
         # Backtrack to find the optimal warping path within the segment
         segment_warp_path = []
         i, j = len(ref_segment), len(tar_segment)
-        while i > 0 or j > 0:
+        while (i > 0
+               or j > 0):
             segment_warp_path.append((start_ref + i - 1, start_tar + j - 1))
             if segment_path_matrix[i, j] == 1:
                 i -= 1
@@ -117,17 +118,15 @@ def correlation_optimized_warping(reference, target, segment_length=100, slack=5
     plt.ylabel('Index of Target Signal')
     plt.grid(False)
     plt.colorbar(label='Log10 Similarity Score')
-
-
     plt.show()
 
-    return warped_target, warp_path
+    return warped_target, warp_path, similarity
 
 
 
 
 
-warped_target, warp_path = correlation_optimized_warping(reference, target)
+warped_target, warp_path , similarity = correlation_optimized_warping(reference, target)
 
 # Print the results
 print("Warping Path:", warp_path)
