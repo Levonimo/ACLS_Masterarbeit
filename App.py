@@ -147,7 +147,6 @@ class MainWindow(QWidget):
             self.data_preparation = mc.DataPreparation(self.selected_folder)
             self.print_to_output(f'DataPreparation initialized with folder: {self.selected_folder}')
             self.npy_import()
-            print('b')
             self.btn_show_files.setEnabled(True)
             self.btn_select_file.setEnabled(True)
             self.btn_warp.setEnabled(True)
@@ -173,13 +172,12 @@ class MainWindow(QWidget):
     def npy_import(self):
         if self.selected_folder:
             npy_files = [file for file in os.listdir(self.selected_folder) if file.endswith('.npy')]
-            print(npy_files)
             if npy_files:
                 dialog = FileSelectionWindow(npy_files, self)
                 if dialog.exec_():
-                    self.selected_Chromatograms = dialog.selected_file
-                    self.print_to_output(f'Chromatograms from {self.selected_file} loaded.')
-                    self.chromatograms = np.load(self.selected_folder + '/' + self.selected_Chromatograms, allow_pickle=True).item()
+                    selected_Chromatograms = dialog.selected_file
+                    self.print_to_output(f'Chromatograms from {selected_Chromatograms} loaded.')
+                    self.chromatograms = np.load(self.selected_folder + '/' + selected_Chromatograms, allow_pickle=True).item()
             else:
                 input_dialog = InputDialog(self)
                 if input_dialog.exec_():
@@ -187,22 +185,35 @@ class MainWindow(QWidget):
                     self.print_to_output(f'New File Named: {input_word}.npy')
 
                     self.chromatograms = self.data_preparation.get_list_of_chromatograms(input_word, file_list=self.data_preparation.get_file_names())
-                    print(self.chromatograms)
-                    self.selected_Chromatograms = f'{input_word}.npy'
 
     def PerformeWarping(self):
-        if self.data_preparation and self.selected_file:
+        file_names = self.data_preparation.get_file_names().append('All')
+        dialog = FileSelectionWindow(file_names, self)
+        if dialog.exec_():
+            selected_target = dialog.selected_file
+            if selected_target == 'All':
+                selected_target = self.data_preparation.get_file_names()
+        else:
+            self.print_to_output('Please select a file to compare with.')
+            return
+
+        if self.selected_reference_file and selected_target:
             reference = self.data_preparation.get_chromatogram(self.selected_reference_file)
-            data_files = self.data_preparation.get_file_names()
             self.warped_chromatograms = {}
-            for file in data_files:
-                if file != self.selected_file:
+            for file in selected_target:
+                if file != self.selected_reference_file:
                     target = self.data_preparation.get_chromatogram(file)
                     warped_target, warp_path = mc.COW(reference, target)
                     self.warped_chromatograms[file] = warped_target
                     self.print_to_output(f'Warping Path for {file}: {warp_path}')
                 else:
                     self.warped_chromatograms[file] = reference
+        elif selected_target:
+            self.print_to_output('Please select a reference file.')
+        elif self.selected_reference_file:
+            self.print_to_output('Please select a file to compare with.')
+        else:
+            self.print_to_output('Please select a file to compare with and a reference file.')
 
 
 
