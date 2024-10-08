@@ -1,8 +1,8 @@
 import sys
+import master_class as mc
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QTextEdit, QHBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QDialog, QListWidget, QLineEdit
 from PyQt5.QtGui import QPixmap
-import master_class as mc
 from PyQt5.QtCore import Qt
 import os
 import numpy as np
@@ -10,12 +10,12 @@ import numpy as np
 class InputDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle('Input Required')
+        self.setWindowTitle('New File-Name')
         self.setGeometry(200, 200, 300, 100)
 
         layout = QVBoxLayout()
 
-        self.label = QLabel('Please enter a word:', self)
+        self.label = QLabel('Please enter a File-Name:', self)
         layout.addWidget(self.label)
 
         self.input_field = QLineEdit(self)
@@ -62,6 +62,7 @@ class FileSelectionWindow(QDialog):
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.chromatograms = dict()
         self.initUI()
 
     def initUI(self):
@@ -140,11 +141,11 @@ class MainWindow(QWidget):
         else:
             self.print_to_output('Kein Ordner ausgewählt')
 
+
     def initializeDataPreparation(self):
         if self.selected_folder:
             self.data_preparation = mc.DataPreparation(self.selected_folder)
             self.print_to_output(f'DataPreparation initialized with folder: {self.selected_folder}')
-            self.chromatograms = {}
             self.npy_import()
             print('b')
             self.btn_show_files.setEnabled(True)
@@ -172,7 +173,7 @@ class MainWindow(QWidget):
     def npy_import(self):
         if self.selected_folder:
             npy_files = [file for file in os.listdir(self.selected_folder) if file.endswith('.npy')]
-
+            print(npy_files)
             if npy_files:
                 dialog = FileSelectionWindow(npy_files, self)
                 if dialog.exec_():
@@ -184,8 +185,9 @@ class MainWindow(QWidget):
                 if input_dialog.exec_():
                     input_word = input_dialog.input_text
                     self.print_to_output(f'New File Named: {input_word}.npy')
-                    self.chromatograms = self.data_preparation.get_list_of_chromatograms(self.selected_folder + input_word+'.npy',
-                                                                    files_list=self.data_preparation.get_file_names())
+
+                    self.chromatograms = self.data_preparation.get_list_of_chromatograms(input_word, file_list=self.data_preparation.get_file_names())
+                    print(self.chromatograms)
                     self.selected_Chromatograms = f'{input_word}.npy'
 
     def PerformeWarping(self):

@@ -20,6 +20,7 @@ def frontslash_to_backslash(string):
 
 class DataPreparation:
     def __init__(self, path):
+        self.chromatograms = {}
         if not isinstance(path, str):
             raise TypeError("Path must be a string.")
         if not os.path.isdir(path):
@@ -139,7 +140,6 @@ class DataPreparation:
 
         if file_list:
             if not os.path.isfile(self.path+file+'.npy'):
-                self.chromatograms = {}
                 for name in file_list:
                     file_path = os.path.join(self.mzml_path, name+'.mzML')
                     if not os.path.isfile(file_path):
@@ -147,12 +147,12 @@ class DataPreparation:
                     self.chromatograms[name] = self.mzml_to_array(file_path)
                 np.save(self.path+file+'.npy', self.chromatograms)
             else:
-                np.load(self.path+file+'.npy', allow_pickle=True).item()
+                self.chromatograms = np.load(self.path+file+'.npy', allow_pickle=True).item()
         else:
             if not os.path.isfile(self.path+file+'.npy'):
                 raise ValueError(f"{file}.npy does not exist and no name list is given.")
             else:
-                np.load(self.path+file+'.npy', allow_pickle=True).item()
+                self.chromatograms = np.load(self.path+file+'.npy', allow_pickle=True).item()
         '''        
         if not isinstance(names, list) and not isinstance(names, str):
             raise TypeError("names must be a list of strings or a single string.")
