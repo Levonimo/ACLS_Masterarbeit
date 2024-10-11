@@ -1,26 +1,24 @@
 import master_function as mf
-import Archiv.master_class_alt as mc
+import master_class as mc
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 
-#PATH = "F:/Documents/MasterArbeit/Data"
-PATH = "D:/OneDrive - ZHAW/Masterarbeit/Data"
+PATH = "F:/Documents/MasterArbeit/Data"
+#PATH = "D:/OneDrive - ZHAW/Masterarbeit/Data"
+#PATH = 'C:/Users/wilv/OneDrive - ZHAW (1)/Masterarbeit/Data'
 
-Data = mc.Data_Preparation(PATH)
-Data.convert_d_to_mzml()
+Data = mc.DataPreparation(PATH)
 
 #Data.interact_with_msdial("F:/ProgramFiles/MSDIAL/MsdialConsoleApp.exe", "GCMS")
 #Data.convert_msdial_to_csv()
 
-data_files = Data.get_name_mzml_files()
+data_files = Data.get_file_names()
+print(data_files)
+
 
 # Safe the Dictionary Chromatograms to a npy file if the file is not already existing
-if not os.path.exists(PATH+'/Chromatograms.npy'):
-    Chromatograms = Data.get_list_of_chromatograms(data_files)
-    np.save(PATH+'/Chromatograms.npy', Chromatograms)
-else:
-    Chromatograms = Data.get_list_of_chromatograms(PATH+'/Chromatograms.npy', source_type = 'FromNPY')
+Chromatograms = Data.get_list_of_chromatograms('Chromatograms', data_files)
 
 print('#############################################################################################################')
 '''
@@ -72,9 +70,191 @@ print('#########################################################################
 
 
 #Data.plot_chromatogram(data_files[7])
-'''
+
 print('#############################################################################################################')
-'''
+
 Data.set_comparison_chromatogram(data_files[-1])
 Data.aligned_chromatograms(data_files[4])
+
+
+print('#############################################################################################################')
+
+Warped_chromatograms = dict()
+
+for i in range(len(data_files)-1):
+    Warped_chromatograms[data_files[i]] = Data.warping(np.sum(Chromatograms[data_files[-1]], axis = 1), np.sum(Chromatograms[data_files[i]], axis = 1))
+
+Warped_chromatograms[data_files[-1]] = np.sum(Chromatograms[data_files[-1]], axis = 1)
+
+np.save(PATH+'/Warped_chromatograms.npy', Warped_chromatograms)
 '''
+
+Warped_chromatograms = np.load(PATH+'/Warped_chromatograms.npy', allow_pickle=True).item()
+print('#############################################################################################################')
+
+rt = Data.get_retention_time()
+'''
+# Plot the Warped Chromatograms
+plt.figure(figsize=(12, 5))
+for i in range(len(data_files)):
+    plt.plot(rt, Warped_chromatograms[data_files[i]])
+plt.xlabel('Retention Time')
+plt.ylabel('Intensity')
+plt.gca().spines['right'].set_visible(False)
+plt.gca().spines['top'].set_visible(False)
+plt.show()
+
+print('#############################################################################################################')
+
+# Plot the Original Chromatograms
+plt.figure(figsize=(12, 5))
+for i in range(len(data_files)):
+    plt.plot(rt, np.sum(Chromatograms[data_files[i]], axis = 1))
+plt.xlabel('Retention Time')
+plt.ylabel('Intensity')
+plt.gca().spines['right'].set_visible(False)
+plt.gca().spines['top'].set_visible(False)
+plt.show()
+'''
+print('#############################################################################################################')
+pca, scores, loadings, explained_variance_ratio = Data.perform_pca(Warped_chromatograms)
+#scores, loadings, eigenvalues, eigenvectors = Data.PCA(Warped_chromatograms)
+
+# Plot the PCA
+plt.figure(figsize=(12, 5))
+#plt.plot(eigenvalues[:4]/np.sum(eigenvalues), 'o-')
+plt.plot(explained_variance_ratio, 'o-')
+plt.xlabel('Principal Component')
+plt.ylabel('Eigenvalue')
+plt.show()
+
+print('#############################################################################################################')
+
+
+'''
+# Plot the PC1 - PC5
+plt.figure(figsize=(12, 5))
+for i in range(5):
+    plt.plot(rt, eigenvectors[:,i])
+plt.xlabel('Retention Time')
+plt.ylabel('Intensity')
+plt.gca().spines['right'].set_visible(False)
+plt.gca().spines['top'].set_visible(False)
+plt.legend(['PC1', 'PC2', 'PC3', 'PC4', 'PC5'])
+plt.show()
+'''
+
+print('#############################################################################################################')
+
+# plot the scores of the first two PCs
+plt.figure(figsize=(12, 5))
+for i in range(len(data_files)):
+    if 'OOO' in data_files[i]:
+        plt.scatter(scores[i, 2], scores[i, 1], color = 'silver')
+    elif 'SOO' in data_files[i]:
+        plt.scatter(scores[i, 2], scores[i, 1], color = 'bisque')
+    elif 'SOL' in data_files[i]:
+        plt.scatter(scores[i, 2], scores[i, 1], color = 'orange')
+    elif 'SGO' in data_files[i]:
+        plt.scatter(scores[i, 2], scores[i, 1], color = 'lightgreen')
+    elif 'SGL' in data_files[i]:
+        plt.scatter(scores[i, 2], scores[i, 1], color = 'forestgreen')
+    else:
+        plt.scatter(scores[i, 2], scores[i, 1], color = 'blue')
+    plt.text(scores[i, 2], scores[i, 1], data_files[i])
+#plt.scatter(scores[:, 0], scores[:, 1])
+plt.xlabel('PC3')
+plt.ylabel('PC2')
+plt.gca().spines['right'].set_visible(False)
+plt.gca().spines['top'].set_visible(False)
+plt.show()
+
+print('#############################################################################################################')
+Chromatograms2 = dict()
+for i in range(len(data_files)):
+    Chromatograms2[data_files[i]] = np.sum(Chromatograms[data_files[i]], axis = 1)
+pca, scores, loadings, explained_variance_ratio = Data.perform_pca(Chromatograms2)
+
+
+# Plot the PCA
+plt.figure(figsize=(12, 5))
+#plt.plot(eigenvalues[:4]/np.sum(eigenvalues), 'o-')
+plt.plot(explained_variance_ratio, 'o-')
+plt.xlabel('Principal Component')
+plt.ylabel('Eigenvalue')
+plt.show()
+
+# plot the scores of the first two PCs
+plt.figure(figsize=(12, 5))
+for i in range(len(data_files)):
+    if 'OOO' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'silver')
+    elif 'SOO' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'bisque')
+    elif 'SOL' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'orange')
+    elif 'SGO' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'lightgreen')
+    elif 'SGL' in data_files[i]:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'forestgreen')
+    else:
+        plt.scatter(scores[i, 0], scores[i, 1], color = 'blue')
+    plt.text(scores[i, 0], scores[i, 1], data_files[i])
+#plt.scatter(scores[:, 0], scores[:, 1])
+plt.xlabel('PC1')
+plt.ylabel('PC2')
+plt.gca().spines['right'].set_visible(False)
+plt.gca().spines['top'].set_visible(False)
+plt.show()
+
+
+print('#############################################################################################################')
+
+import seaborn as sns
+from sklearn.cluster import KMeans
+from sklearn.neighbors import NearestNeighbors
+from scipy.cluster.hierarchy import dendrogram, linkage
+from sklearn.decomposition import PCA
+
+# Chromatogramme: Daten in Form eines 2D-Arrays, wo jede Zeile ein Chromatogramm darstellt
+# Angenommen, PCA wurde schon durchgeführt und Scores sind die Ergebnisse
+# Chromatograms -> die ursprünglichen Daten
+
+# Anzahl der Cluster für K-Means
+n_clusters = 3
+
+# K-Means Clustering auf die Scores anwenden
+kmeans = KMeans(n_clusters=n_clusters)
+cluster_labels = kmeans.fit_predict(scores)
+
+# PCA scatter plot mit KMeans-Clustering-Ergebnis
+plt.figure(figsize=(8,6))
+plt.scatter(scores[:, 0], scores[:, 1], c=cluster_labels, cmap='viridis', marker='o')
+plt.title(f'PCA Plot mit {n_clusters}-Means Clustering')
+plt.xlabel('PCA 1')
+plt.ylabel('PCA 2')
+plt.colorbar(label='Cluster Label')
+plt.show()
+
+# K-nearest neighbors
+n_neighbors = 5
+nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(scores)
+distances, indices = nbrs.kneighbors(scores)
+
+# Nearest neighbors für ein Chromatogramm anzeigen
+chromatogram_idx = 6  # Beispielhaftes Chromatogramm
+print(f"Die nächsten {n_neighbors} Nachbarn für Chromatogramm {chromatogram_idx}:")
+print(indices[chromatogram_idx])
+
+# Hierarchisches Clustering (Dendrogramm)
+linked = linkage(scores, 'ward')
+
+plt.figure(figsize=(10, 7))
+dendrogram(linked,
+           orientation='top',
+           distance_sort='descending',
+           show_leaf_counts=True)
+plt.title("Dendrogram (Hierarchisches Clustering)")
+plt.xlabel('Chromatogramm Index')
+plt.ylabel('Abstand')
+plt.show()

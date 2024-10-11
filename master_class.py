@@ -7,6 +7,8 @@ import copy as cp
 import math
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 
 from Warping import correlation_optimized_warping as COW
@@ -18,6 +20,7 @@ def frontslash_to_backslash(string):
 
 class DataPreparation:
     def __init__(self, path):
+        self.chromatograms = {}
         if not isinstance(path, str):
             raise TypeError("Path must be a string.")
         if not os.path.isdir(path):
@@ -33,7 +36,9 @@ class DataPreparation:
         self.csv_path = os.path.join(self.path, "CSV")
         os.makedirs(self.csv_path, exist_ok=True)
 
-        self.mZ_totlist = np.round(np.arange(20, 400.1, 0.1), 1)
+        self.mZ_totlist = np.round(np.arange(35, 400.1, 0.1), 1)
+
+        self.convert_d_to_mzml()
 
     def convert_d_to_mzml(self):
         for file in os.listdir(self.path):
@@ -43,9 +48,12 @@ class DataPreparation:
                     command = f"msconvert {os.path.join(self.path, file)} -o {self.mzml_path} --mzML"
                     subprocess.run(command, shell=True, check=True)
 
-    def get_name_mzml_files(self):
-        return os.listdir(self.mzml_path)
-
+    def get_file_names(self):
+        files = os.listdir(self.mzml_path)
+        #remove the .mzML ending
+        files = [file.replace('.mzML','') for file in files]
+        return files
+    '''
     def interact_with_msdial(self, msdial_path, param_file_name, type="gcms"):
         if not isinstance(msdial_path, str):
             raise TypeError("msdial_path must be a string.")
@@ -82,7 +90,7 @@ class DataPreparation:
             data.to_csv(os.path.join(self.csv_path, csv_file_name), index=False)
 
         print(f'Converted {len(msdial_files)} .msdial files to .csv')
-
+    '''
     def get_retention_time(self):
         exp = pyopenms.MSExperiment()
         mzml_files = os.listdir(self.mzml_path)
@@ -118,10 +126,34 @@ class DataPreparation:
                 full_intensity[bins - 1] = intensity
 
                 chromatogram.append(full_intensity.tolist())
-
+        chromatogram = self.compression_of_spectra(np.array(chromatogram))
         return np.array(chromatogram)
 
-    def get_list_of_chromatograms(self, names, source_type="FromMzml"):
+
+    def get_list_of_chromatograms(self, file, file_list = None):
+        if not isinstance(file, str):
+            raise TypeError("file must be a string.")
+        if not isinstance(file_list, list) or not all(isinstance(name, str) for name in file_list):
+            raise TypeError("file_list must be a list of strings.")
+        if not file:
+            file = "Chromatograms"
+
+        if file_list:
+            if not os.path.isfile(self.path+file+'.npy'):
+                for name in file_list:
+                    file_path = os.path.join(self.mzml_path, name+'.mzML')
+                    if not os.path.isfile(file_path):
+                        raise ValueError(f"{file_path} does not exist.")
+                    self.chromatograms[name] = self.mzml_to_array(file_path)
+                np.save(self.path+file+'.npy', self.chromatograms)
+            else:
+                self.chromatograms = np.load(self.path+file+'.npy', allow_pickle=True).item()
+        else:
+            if not os.path.isfile(self.path+file+'.npy'):
+                raise ValueError(f"{file}.npy does not exist and no name list is given.")
+            else:
+                self.chromatograms = np.load(self.path+file+'.npy', allow_pickle=True).item()
+        '''        
         if not isinstance(names, list) and not isinstance(names, str):
             raise TypeError("names must be a list of strings or a single string.")
         if not all(isinstance(name, str) for name in names) and not isinstance(names, str):
@@ -130,7 +162,7 @@ class DataPreparation:
             raise ValueError("source_type must be either 'FromMzml' or 'FromNPY'.")
 
         self.chromatograms = {}
-
+        
         if source_type == "FromMzml":
             for name in names:
                 file_path = os.path.join(self.mzml_path, name)
@@ -141,7 +173,7 @@ class DataPreparation:
             if not os.path.isfile(names):
                 raise ValueError(f"{names} is not a valid file path.")
             self.chromatograms = np.load(names, allow_pickle=True).item()
-
+        '''
         return self.chromatograms
 
     def get_chromatogram(self, name):
@@ -217,8 +249,70 @@ class DataPreparation:
         norm_factor[norm_factor == 0] = 1  # Avoid division by zero
         return chromatogram / norm_factor[:, None]
     
+    def compression_of_spectra(self, chromatogram):
+        '''
+        This function compresses the spectra to a bigger step size from 0.1 to 1
+        :return:
+        '''
+        compressed_chroma = np.sum(chromatogram[:,0:7], axis=1)
+        # iterate over the chromatogram and compress the spectra
+        # add first 5 elements, then the sum of the next 10 elements until the last 5 elements
+        for j in range(7, np.shape(chromatogram)[1]-3, 10):
+            summed_columns = np.sum(chromatogram[:,j:j+10], axis=1)
+            compressed_chroma = np.vstack((compressed_chroma, summed_columns))
+        #compressed_chroma = np.vstack((compressed_chroma, np.sum(chroma[:,-5:], axis=1)))
 
+        compressed_chroma = np.transpose(compressed_chroma)
+
+        return compressed_chroma
 
     def warping(self, reference, target):
         warped_target, _ = COW(reference,target)
         return warped_target
+
+    def perform_pca(self,chromatograms, n_components=10):
+        """
+        Führt eine Principal Component Analysis (PCA) auf einer Matrix von Gaschromatogrammen durch.
+
+        Parameters:
+        chromatograms (np.array): Die Eingabematrix von Gaschromatogrammen.
+        n_components (int): Die Anzahl der Hauptkomponenten, die extrahiert werden sollen.
+
+        Returns:
+        Tuple: Tuple mit den folgenden Werten:
+            - pca (PCA-Objekt): Das PCA-Objekt, das die Hauptkomponenten enthält.
+            - scores (np.array): Die Scores der Daten in den neuen Hauptkomponenten.
+            - loadings (np.array): Die Loadings (Ladungen) der Variablen.
+            - explained_variance_ratio (np.array): Der Anteil der Varianz, die durch jede Hauptkomponente erklärt wird.
+        """
+        chromatograms = np.array([chromatograms[key] for key in chromatograms.keys()])
+        # Standardisierung der Daten
+        scaler = StandardScaler()
+        chromatograms_std = scaler.fit_transform(chromatograms)
+
+        # PCA durchführen
+        pca = PCA(n_components=n_components)
+        scores = pca.fit_transform(chromatograms_std)
+
+        # Ladungen (Loadings) sind die Koeffizienten der linearen Kombinationen der ursprünglichen Variablen
+        loadings = pca.components_.T
+
+        # Anteil der erklärten Varianz
+        explained_variance_ratio = pca.explained_variance_ratio_
+
+        return pca, scores, loadings, explained_variance_ratio
+
+    def PCA(self, Chromatograms):
+        Chromatograms = np.array([Chromatograms[key] for key in Chromatograms.keys()])
+        Chromatograms = Chromatograms.T
+        #Chromatograms = Chromatograms - np.mean(Chromatograms, axis = 0)
+        covariance_matrix = np.cov(Chromatograms.T)
+        eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
+        idx = np.argsort(eigenvalues)[::-1]
+        eigenvalues = eigenvalues[idx]
+        eigenvectors = eigenvectors[:, idx]
+        # Calculate Loadings and Scores
+        scores = np.dot(Chromatograms, eigenvectors)
+        loadings = np.dot(scores, eigenvectors.T)
+        return scores, loadings, eigenvalues, eigenvectors
+

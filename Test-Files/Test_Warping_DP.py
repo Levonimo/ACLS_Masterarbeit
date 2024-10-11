@@ -1,11 +1,11 @@
-import Archiv.master_class_alt as mc
+import master_class as mc
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-Data = mc.Data_Preparation("F:/Documents/MasterArbeit/Data")
-data_files = Data.get_name_mzml_files()
-Chromatograms = Data.get_list_of_chromatograms('F:/Documents/MasterArbeit/Data/Chromatograms.npy', Type = 'FromNPY')
+Data = mc.DataPreparation("F:/Documents/MasterArbeit/Data")
+data_files = Data.get_file_names()
+Chromatograms = Data.get_list_of_chromatograms('Chromatograms_short', data_files)
 rt = Data.get_retention_time()
 # Example usage
 # Create example 2D GC-MS data
@@ -15,8 +15,7 @@ reference = Chromatograms[data_files[7]]
 target = Chromatograms[data_files[8]]
 
 
-
-def correlation_optimized_warping(reference, target, segment_length=10, slack=1):
+def correlation_optimized_warping(reference, target, segment_length=100, slack=5):
 
     # calculate similarity between the reference and target signal by using dot product
     # of each normalized spectra of the reference and target chromatogramm
@@ -32,6 +31,12 @@ def correlation_optimized_warping(reference, target, segment_length=10, slack=1)
 
     # Calculate the dot product between the reference and target signals
     similarity = np.dot(norm_reference, norm_target.T)
+
+    # Use an activation function to emphasize high similarity values
+    similarity = np.tanh(similarity)
+    # Normalize the similarity matrix to the range [0, 1]
+    #similarity = (similarity - np.min(similarity)) / (np.max(similarity) - np.min(similarity))
+
 
     print(similarity.shape)
 
@@ -70,8 +75,7 @@ def correlation_optimized_warping(reference, target, segment_length=10, slack=1)
         for i in range(1, len(ref_segment) + 1):
             for j in range(1, len(tar_segment) + 1):
                 cost = np.abs(ref_segment[i - 1] - tar_segment[j - 1])
-                min_cost = min(segment_cost_matrix[i - 1, j], segment_cost_matrix[i, j - 1],
-                               segment_cost_matrix[i - 1, j - 1])
+                min_cost = min(segment_cost_matrix[i - 1, j], segment_cost_matrix[i, j - 1], segment_cost_matrix[i - 1, j - 1])
                 segment_cost_matrix[i, j] = cost + min_cost
 
                 if min_cost == segment_cost_matrix[i - 1, j]:
@@ -84,7 +88,8 @@ def correlation_optimized_warping(reference, target, segment_length=10, slack=1)
         # Backtrack to find the optimal warping path within the segment
         segment_warp_path = []
         i, j = len(ref_segment), len(tar_segment)
-        while i > 0 or j > 0:
+        while (i > 0
+               or j > 0):
             segment_warp_path.append((start_ref + i - 1, start_tar + j - 1))
             if segment_path_matrix[i, j] == 1:
                 i -= 1
@@ -101,26 +106,27 @@ def correlation_optimized_warping(reference, target, segment_length=10, slack=1)
     warped_target = target[warp_path[:, 1]]
 
     # Plot the warping path plus the similarity matrix as a heatmap
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(12, 10), dpi=600)
 
     #plt.imshow(similarity[3000:3700,3000:3700], aspect='auto', cmap='plasma', origin='lower', extent=(2300,2900, 2300,2900))
     #plt.plot(warp_path[3000:3700, 0], warp_path[3000:3700, 1], marker='o', markersize=
 
     plt.imshow(np.log10(similarity), aspect='auto', cmap='plasma', origin='lower', extent=(0, ref_length, 0, tar_length))
-    plt.plot(warp_path[:, 0], warp_path[:, 1], color='black')
+    plt.plot(warp_path[:, 0], warp_path[:, 1], color='black', linewidth=0.5)
     plt.title('Optimized Warping Path')
     plt.xlabel('Index of Reference Signal')
     plt.ylabel('Index of Target Signal')
-    plt.grid(True)
+    plt.grid(False)
+    plt.colorbar(label='Log10 Similarity Score')
     plt.show()
 
-    return warped_target, warp_path
+    return warped_target, warp_path, similarity
 
 
 
 
 
-warped_target, warp_path = correlation_optimized_warping(reference, target)
+warped_target, warp_path , similarity = correlation_optimized_warping(reference, target)
 
 # Print the results
 print("Warping Path:", warp_path)
@@ -128,7 +134,7 @@ print("Warped Target:", warped_target)
 
 reference = np.sum(reference, axis=1)
 target = np.sum(target, axis=1)
-
+'''
 plt.plot(rt[3200:3500],reference[3200:3500])
 plt.plot(rt[3200:3500],target[3200:3500])
 plt.xlabel("Retention Time")
@@ -143,3 +149,4 @@ plt.xlabel("Retention Time")
 plt.ylabel("Intensity")
 plt.title("Warped Data")
 plt.show()
+'''
