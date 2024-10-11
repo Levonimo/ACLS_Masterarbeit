@@ -94,6 +94,12 @@ class MainWindow(QWidget):
         self.btn_select_file.setEnabled(False)
         grid.addWidget(self.btn_select_file, 3, 0)
 
+
+        self.btn_show_file_in_folder = QPushButton('Check for Files',self)
+        self.btn_show_file_in_folder.clicked.connect(self.show_list_list_of_existing_files)
+        layout.addWidget(self.btn_show_file_in_folder)
+
+        # QTextEdit Feld für die Ausgabe
         self.btn_warp = QPushButton('Performe Warping', self)
         self.btn_warp.clicked.connect(self.PerformeWarping)
         self.btn_warp.setEnabled(False)
@@ -127,8 +133,15 @@ class MainWindow(QWidget):
         grid.setColumnStretch(0, 1)  # Buttons Spalte
         grid.setColumnStretch(1, 2)  # Textfeld und Bildfelder Spalte
 
+
+        # Plot Canvas hinzufügen
+        self.plot_canvas = PlotCanvas(self, width=5, height=4)
+        layout.addWidget(self.plot_canvas)
+
+        self.setLayout(layout)
+
         self.selected_folder = None
-        self.data_preparation = None
+        self.DataPrepClass = None
 
     def selectFolder(self):
         # Öffnet einen Dialog zum Auswählen eines Ordners
@@ -150,6 +163,13 @@ class MainWindow(QWidget):
             self.btn_show_files.setEnabled(True)
             self.btn_select_file.setEnabled(True)
             self.btn_warp.setEnabled(True)
+
+
+        # Dummy-Daten plotten
+        data = np.random.rand(10)
+        self.plot_canvas.plot(data)  # Die plot-Methode von PlotCanvas aufrufen
+
+
 
     def print_to_output(self, text):
         self.output_field.append(text)  # Fügt Text am Ende des QTextEdit hinzu

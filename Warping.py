@@ -1,8 +1,6 @@
-#import numpy as np
 #import master_class as mc
-
-
 import numpy as np
+
 
 
 def correlation_optimized_warping(reference, target, slack=14, segments=100):
