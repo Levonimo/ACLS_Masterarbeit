@@ -1,8 +1,5 @@
 import numpy as np
-import master_class as mc
-
-
-import numpy as np
+#import master_class as mc
 
 
 def correlation_optimized_warping(reference, target, slack=14, segments=100):
@@ -55,7 +52,7 @@ def correlation_optimized_warping(reference, target, slack=14, segments=100):
 
 
 # Example usage
-
+'''
 #PATH = "F:/Documents/MasterArbeit/Data"
 PATH = "D:/OneDrive - ZHAW/Masterarbeit/Data"
 Data = mc.DataPreparation(PATH)
@@ -97,3 +94,6 @@ plt.xlabel("Retention Time")
 plt.ylabel("Intensity")
 plt.title("Warped Data")
 plt.show()
+
+
+'''

@@ -6,3 +6,9 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+# Py Source ignored files
+/__pychache__/
+/__pycache__/master_class.cpython-311.pyc
+/__pycache__/master_class_ajusted.cpython-311.pyc
+/__pycache__/master_function.cpython-311.pyc
+/__pycache__/Warping.cpython-311.pyc
