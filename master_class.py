@@ -139,20 +139,20 @@ class DataPreparation:
             file = "Chromatograms"
 
         if file_list:
-            if not os.path.isfile(self.path+file+'.npy'):
+            if not os.path.isfile(self.path+ '/' +file+'.npy'):
                 for name in file_list:
                     file_path = os.path.join(self.mzml_path, name+'.mzML')
                     if not os.path.isfile(file_path):
                         raise ValueError(f"{file_path} does not exist.")
                     self.chromatograms[name] = self.mzml_to_array(file_path)
-                np.save(self.path+file+'.npy', self.chromatograms)
+                np.save(self.path+ '/' +file+'.npy', self.chromatograms)
             else:
-                self.chromatograms = np.load(self.path+file+'.npy', allow_pickle=True).item()
+                self.chromatograms = np.load(self.path+ '/' +file+'.npy', allow_pickle=True).item()
         else:
-            if not os.path.isfile(self.path+file+'.npy'):
+            if not os.path.isfile(self.path+ '/' +file+'.npy'):
                 raise ValueError(f"{file}.npy does not exist and no name list is given.")
             else:
-                self.chromatograms = np.load(self.path+file+'.npy', allow_pickle=True).item()
+                self.chromatograms = np.load(self.path+ '/' +file+'.npy', allow_pickle=True).item()
         '''        
         if not isinstance(names, list) and not isinstance(names, str):
             raise TypeError("names must be a list of strings or a single string.")
