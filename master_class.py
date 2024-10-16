@@ -132,11 +132,16 @@ class DataPreparation:
 
     def get_list_of_chromatograms(self, file, file_list = None):
         if not isinstance(file, str):
-            raise TypeError("file must be a string.")
-        if not isinstance(file_list, list) or not all(isinstance(name, str) for name in file_list):
-            raise TypeError("file_list must be a list of strings.")
+            raise TypeError("file must be a string or an .npy-File.")
+        if file_list:
+            if not isinstance(file_list, list) or not all(isinstance(name, str) for name in file_list):
+                raise TypeError("file_list must be a list of strings.")
         if not file:
             file = "Chromatograms"
+        if file.endswith('.npy'):
+            # strip the ending
+            file = file.replace('.npy','')
+        
 
         if file_list:
             if not os.path.isfile(self.path+ '/' +file+'.npy'):
@@ -150,36 +155,21 @@ class DataPreparation:
                 self.chromatograms = np.load(self.path+ '/' +file+'.npy', allow_pickle=True).item()
         else:
             if not os.path.isfile(self.path+ '/' +file+'.npy'):
-                raise ValueError(f"{file}.npy does not exist and no name list is given.")
+                raise ValueError(f"{file} does not exist and no name list is given.")
             else:
                 self.chromatograms = np.load(self.path+ '/' +file+'.npy', allow_pickle=True).item()
-        '''        
-        if not isinstance(names, list) and not isinstance(names, str):
-            raise TypeError("names must be a list of strings or a single string.")
-        if not all(isinstance(name, str) for name in names) and not isinstance(names, str):
-            raise TypeError("All elements in names must be strings.")
-        if source_type not in ["FromMzml", "FromNPY"]:
-            raise ValueError("source_type must be either 'FromMzml' or 'FromNPY'.")
 
-        self.chromatograms = {}
-        
-        if source_type == "FromMzml":
-            for name in names:
-                file_path = os.path.join(self.mzml_path, name)
-                if not os.path.isfile(file_path):
-                    raise ValueError(f"{file_path} does not exist.")
-                self.chromatograms[name] = self.mzml_to_array(file_path)
-        elif source_type == "FromNPY":
-            if not os.path.isfile(names):
-                raise ValueError(f"{names} is not a valid file path.")
-            self.chromatograms = np.load(names, allow_pickle=True).item()
-        '''
         return self.chromatograms
+
+
 
     def get_chromatogram(self, name):
         if not isinstance(name, str):
             raise TypeError("name must be a string.")
         return self.chromatograms.get(name)
+    
+
+
 
     def plot_chromatogram(self, name):
         if not isinstance(name, str) and not isinstance(name, list):

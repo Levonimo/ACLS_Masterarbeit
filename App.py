@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QPushButton,
                               QFileDialog, QLabel, QTextEdit, QHBoxLayout, 
                               QGridLayout, QLayout, QDialog, QListWidget, 
                               QLineEdit, QGroupBox, QSlider)
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QEvent
 import os
 import numpy as np
@@ -12,6 +12,7 @@ import styles
 from components import ComboBox, MyBar
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from io import BytesIO
+from copy import copy
 
 class InputDialog(QDialog):
     def __init__(self, parent=None):
@@ -71,10 +72,13 @@ class MainWindow(QWidget):
         
         # Set window title and size
         self.setWindowTitle('GC-MS Warping Tool')
+        # Set the window icon
+        app_icon = QIcon("images/Logo_ICBT_Analytik_round.ico")
+        self.setWindowIcon(app_icon)
 
         # Layout
         self.setStyleSheet(styles.Levin)
-        self.setMinimumSize(500, 800)
+        self.setMinimumSize(900, 1200)
         self.setWindowFlags(Qt.FramelessWindowHint)
 
         # Hauptlayout - ein Gitterlayout
@@ -86,7 +90,6 @@ class MainWindow(QWidget):
         self.MenuBar.setFixedHeight(40)
         MainWindow.addWidget(self.MenuBar)
         
-
 
         InputGroupBox = QGroupBox("Init", objectName="Init")
         InputLayout = QGridLayout()
@@ -106,7 +109,7 @@ class MainWindow(QWidget):
         self.btn_show_files.setEnabled(False)
         InputLayout.addWidget(self.btn_show_files, 2, 0)
 
-        self.btn_select_file = QPushButton('Select a File', self)
+        self.btn_select_file = QPushButton('Select Reference File', self)
         self.btn_select_file.clicked.connect(self.openFileSelectionWindow)
         self.btn_select_file.setEnabled(False)
         InputLayout.addWidget(self.btn_select_file, 3, 0)
@@ -131,9 +134,10 @@ class MainWindow(QWidget):
         self.output_field = QTextEdit(self)
         self.output_field.setPlainText("Waiting for input...")
         self.output_field.setReadOnly(True)
-        InputLayout.addWidget(self.output_field, 0, 1, 8, 1)  # Textfeld über 4 Zeilen
+        InputLayout.addWidget(self.output_field, 0, 1, 8, 1)  # Textfeld über 8 Zeilen
 
         InputGroupBox.setLayout(InputLayout)
+        InputGroupBox.setFixedHeight(250)
         MainWindow.addWidget(InputGroupBox)
 
 
@@ -146,10 +150,10 @@ class MainWindow(QWidget):
         parameter1 = 'Slack'
         self.slider1 = QSlider(Qt.Horizontal)
         self.slider1.setMinimum(0)
-        self.slider1.setMaximum(100)
-        self.slider1.setValue(50)
+        self.slider1.setMaximum(20)
+        self.slider1.setValue(10)
         self.slider1.setTickPosition(QSlider.TicksBelow)
-        self.slider1.setTickInterval(10)
+        self.slider1.setTickInterval(2)
         self.slider1.setSingleStep(1)
         self.slider1_min = QLabel('0')
         self.slider1_max = QLabel('100')
@@ -194,17 +198,17 @@ class MainWindow(QWidget):
 
 
         # Bildfelder in die zweite und dritte Reihe, zweite Spalte
-        image_top = QLabel('Bildfeld 1', self)
-        image_top.setPixmap(QPixmap())  # Bild kann später hinzugefügt werden
-        image_top.setStyleSheet("border: 1px solid black")
-        image_top.setAlignment(Qt.AlignCenter)
-        PlotLayout.addWidget(image_top)  # Erste Bild in Zeile 4
+        self.image_top = QLabel('Bildfeld 1', self)
+        self.image_top.setPixmap(QPixmap())  # Bild kann später hinzugefügt werden
+        self.image_top.setStyleSheet("border: 1px solid black")
+        self.image_top.setAlignment(Qt.AlignCenter)
+        PlotLayout.addWidget(self.image_top)  # Erste Bild in Zeile 4
 
-        image_low = QLabel('Bildfeld 2', self)
-        image_low.setPixmap(QPixmap())  # Bild kann später hinzugefügt werden
-        image_low.setStyleSheet("border: 1px solid black")
-        image_low.setAlignment(Qt.AlignCenter)
-        PlotLayout.addWidget(image_low)  # Zweite Bild in Zeile 5
+        self.image_low = QLabel('Bildfeld 2', self)
+        self.image_low.setPixmap(QPixmap())  # Bild kann später hinzugefügt werden
+        self.image_low.setStyleSheet("border: 1px solid black")
+        self.image_low.setAlignment(Qt.AlignCenter)
+        PlotLayout.addWidget(self.image_low)  # Zweite Bild in Zeile 5
 
         PlotGroupBox.setLayout(PlotLayout)
         MainWindow.addWidget(PlotGroupBox)
@@ -218,25 +222,8 @@ class MainWindow(QWidget):
         self.DataPrepClass = None
 
 
-    def showDist(self) -> None:
-        """
-        Show distance labels for interactions
-
-        called by Menu > Settings > show Distances
-        """
-        if "interactions" in cmd.get_names("all"):
-            if self.MenuBar.actionshowDist.isChecked():
-                cmd.show('labels', 'interactions')
-            else:
-                cmd.hide('labels', 'interactions')
-
-
-
-
-
-
-
-    def selectFolder(self):
+    
+    def selectFolder(self) -> None:
         # Öffnet einen Dialog zum Auswählen eines Ordners
         folder_path = QFileDialog.getExistingDirectory(self, 'Ordner auswählen')
 
@@ -248,7 +235,7 @@ class MainWindow(QWidget):
             self.print_to_output('Kein Ordner ausgewählt')
 
 
-    def initializeDataPreparation(self):
+    def initializeDataPreparation(self) -> None:
         if self.selected_folder:
             self.data_preparation = mc.DataPreparation(self.selected_folder)
             self.print_to_output(f'DataPreparation initialized with folder: {self.selected_folder}')
@@ -256,26 +243,27 @@ class MainWindow(QWidget):
             if self.chromatograms:
                 self.btn_show_files.setEnabled(True)
                 self.btn_select_file.setEnabled(True)
-                self.btn_warp.setEnabled(True)
+                
 
 
-    def print_to_output(self, text):
+    def print_to_output(self, text: str) -> None:
         self.output_field.append(text)  # Fügt Text am Ende des QTextEdit hinzu
 
-    def ShowNameOfAllFiles(self):
+    def ShowNameOfAllFiles(self) -> None:
         if self.data_preparation:
             self.print_to_output('Files in selected folder:')
             file_names = self.data_preparation.get_file_names()
             for i in range(0, len(file_names), 4):
                 self.print_to_output(' | '.join(file_names[i:i + 4]))
 
-    def openFileSelectionWindow(self):
+    def openFileSelectionWindow(self) -> None:
         if self.data_preparation:
             file_names = self.data_preparation.get_file_names()
             dialog = FileSelectionWindow(file_names, self)
             if dialog.exec_():
-                self.selected_reference_file = dialog.selected_file
+                self.selected_reference_file = copy(dialog.selected_file)
                 self.print_to_output(f'Reference file: {self.selected_reference_file}')
+        self.btn_warp.setEnabled(True)
 
     def npy_import(self) -> None:
         if self.selected_folder:
@@ -285,7 +273,7 @@ class MainWindow(QWidget):
                 if dialog.exec_():
                     selected_Chromatograms = dialog.selected_file
                     self.print_to_output(f'Chromatograms from {selected_Chromatograms} loaded.')
-                    self.chromatograms = np.load(self.selected_folder + '/' + selected_Chromatograms, allow_pickle=True).item()
+                    self.chromatograms = self.data_preparation.get_list_of_chromatograms(selected_Chromatograms)
             else:
                 input_dialog = InputDialog(self)
                 if input_dialog.exec_():
@@ -293,6 +281,8 @@ class MainWindow(QWidget):
                     self.print_to_output(f'New File Named: {input_word}.npy')
 
                     self.chromatograms = self.data_preparation.get_list_of_chromatograms(input_word, file_list=self.data_preparation.get_file_names())
+
+        
 
     def PerformeWarping(self) -> None:
         file_names = self.data_preparation.get_file_names()
@@ -310,15 +300,20 @@ class MainWindow(QWidget):
         slack = self.slider1.value()
         segment_length = self.slider2.value()
 
+
         if self.selected_reference_file and selected_target:
             reference = self.data_preparation.get_chromatogram(self.selected_reference_file)
             self.warped_chromatograms = {}
+            self.warp_paths = {}
+            if isinstance(selected_target, str):
+                selected_target = [selected_target]
             for file in selected_target:
                 if file != self.selected_reference_file:
                     target = self.data_preparation.get_chromatogram(file)
                     warped_target, warp_path = mc.COW(reference, target, slack=slack, segments=segment_length)
                     self.warped_chromatograms[file] = warped_target
-                    self.print_to_output(f'Warping Path for {file}: {warp_path}')
+                    self.warp_paths[file] = warp_path
+                    self.print_to_output(f'Warped {file} against Reference {self.selected_reference_file}.')
                 else:
                     self.warped_chromatograms[file] = reference
         elif selected_target:
@@ -328,60 +323,41 @@ class MainWindow(QWidget):
         else:
             self.print_to_output('Please select a file to compare with and a reference file.')
 
-        self.btn_plot.setEnable(True)
+        self.btn_plot.setEnabled(True)
 
     
     # Plotting the chromatograms all unwarped chromatograms in the top image and all warped chromatograms in the lower image
     
 
-    def PlotWarpedChromatograms(self):
+    def PlotWarpedChromatograms(self) -> None:
         import matplotlib.pyplot as plt
+
         if not self.warped_chromatograms:
             self.print_to_output('No warped chromatograms to plot.')
             return
+        rt = self.data_preparation.get_retention_time()
+        def plot_chromatograms(chromatograms, title):
+            fig, ax = plt.subplots()
+            for _, chromatogram in chromatograms.items():
+                ax.plot(rt, chromatogram)
+                ax.set_title(title)
+                ax.set_xlabel('Retention Time')
+                ax.set_ylabel('Intensity')
+                ax.spines['right'].set_visible(False)
+                ax.spines['top'].set_visible(False)
 
-        # Create a figure for plotting
-        fig, ax = plt.subplots()
+            buf = BytesIO()
+            fig.savefig(buf, format='png')
+            buf.seek(0)
+            pixmap = QPixmap()
+            pixmap.loadFromData(buf.getvalue())
+            plt.close(fig)
+            return pixmap
 
-        # Plot all unwarped chromatograms in the top image
-        for file, chromatogram in self.chromatograms.items():
-            ax.plot(chromatogram, label=file)
+        self.image_top.setPixmap(plot_chromatograms(self.chromatograms, 'Unwarped Chromatograms'))
+        self.image_low.setPixmap(plot_chromatograms(self.warped_chromatograms, 'Warped Chromatograms'))
 
-        ax.set_title('Unwarped Chromatograms')
-        ax.legend()
-
-        # Save the plot to a BytesIO object
-        buf = BytesIO()
-        fig.savefig(buf, format='png')
-        buf.seek(0)
-
-        # Load the plot into a QPixmap and set it to the QLabel
-        pixmap = QPixmap()
-        pixmap.loadFromData(buf.getvalue())
-        self.image_top.setPixmap(pixmap)
-
-        # Clear the figure for the next plot
-        ax.clear()
-
-        # Plot all warped chromatograms in the lower image
-        for file, chromatogram in self.warped_chromatograms.items():
-            ax.plot(chromatogram, label=file)
-
-        ax.set_title('Warped Chromatograms')
-        ax.legend()
-
-        # Save the plot to a BytesIO object
-        buf = BytesIO()
-        fig.savefig(buf, format='png')
-        buf.seek(0)
-
-        # Load the plot into a QPixmap and set it to the QLabel
-        pixmap = QPixmap()
-        pixmap.loadFromData(buf.getvalue())
-        self.image_low.setPixmap(pixmap)
-
-        # Close the figure to free up memory
-        plt.close(fig)
+        self.print_to_output('Chromatograms plotted.')
 
 
 
