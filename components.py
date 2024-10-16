@@ -15,7 +15,8 @@ import webbrowser
 from PyQt5.QtWidgets import (QHBoxLayout, QPushButton, QComboBox, QWidget, 
                              QLayout, QMenu, QAction, QCheckBox, QLineEdit, 
                              QWidgetAction)
-from PyQt5.QtCore import pyqtSignal, Qt, QPoint, QEvent
+from PyQt5.QtCore import pyqtSignal, Qt, QPoint, QEvent, QSize
+from PyQt5.QtGui import QIcon
 
 from functools import partial
 import re
@@ -140,13 +141,13 @@ class MyBar(QWidget):
         super(MyBar, self).__init__()
         
         # initialize general variables
-        self.setStyleSheet(styles.David)      
+        self.setStyleSheet(styles.Levin)      
         self.parent = parent
         
         # general settings
         layout = QHBoxLayout()
         layout.setContentsMargins(0,0,0,0)
-        btn_size = 30
+        btn_size = 40
 
         # left hand side
         leftWidget = QWidget()
@@ -154,9 +155,10 @@ class MyBar(QWidget):
         leftLayout.setContentsMargins(0,0,0,0)
 
         # logo
-        ccbiologo = RightPushButton(self)
-        ccbiologo.setStyleSheet(styles.ccbiologo)
-        ccbiologo.setFixedSize(btn_size,btn_size)
+        analyticlogo = QPushButton()
+        analyticlogo.setStyleSheet(styles.analyticlogo)
+        analyticlogo.setFixedSize(btn_size,btn_size)
+        
 
         # settings
         btn_settings = QPushButton()
@@ -172,16 +174,11 @@ class MyBar(QWidget):
         self.actionclean_up = QAction("reset everything", self)
         self.actionclean_up.setShortcut("Ctrl+R")
 
-        submenu_hosts = QAMenuHosts(config.HOSTS, self)
-        self.submenu_chains = QAMenuIntraChains(self)
-
         menu_setting = QMenu()
         menu_setting.setToolTipsVisible(True)
-        menu_setting.setStyleSheet(styles.David)
+        menu_setting.setStyleSheet(styles.Levin)
         menu_setting.addAction(self.actionclean_up)
         menu_setting.addAction(self.actionshowDist)
-        menu_setting.addMenu(submenu_hosts)
-        menu_setting.addMenu(self.submenu_chains)
         btn_settings.setMenu(menu_setting)
 
         # help
@@ -192,7 +189,7 @@ class MyBar(QWidget):
         btn_help.setStyleSheet(styles.MapButton)
         btn_help.setShortcut("Ctrl+H")
 
-        leftLayout.addWidget(ccbiologo)
+        leftLayout.addWidget(analyticlogo)
         leftLayout.addWidget(btn_settings)
         leftLayout.addWidget(btn_help)
         leftWidget.setLayout(leftLayout)
