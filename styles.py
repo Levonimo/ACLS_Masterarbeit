@@ -8,7 +8,7 @@ Adapted from
 styles.py
 """
 
-David = """
+Levin = """
 
 QCheckBox {
   background-color: #19232D;
@@ -242,24 +242,24 @@ QPushButton:pressed { background-color: rgb(23, 26, 30); border-style: solid; bo
 
 SettingsButton = MenuButton + """
 QPushButton::menu-indicator{ image: none;}
-QPushButton { qproperty-icon: url(images/cil-settings.png);}
+QPushButton { qproperty-icon: url(images/cil-settings.png); qproperty-iconSize: 40px 40px;}
 """
 
 MapButton = MenuButton + """
-QPushButton { qproperty-icon: url(images/cil-map.png);}
+QPushButton { qproperty-icon: url(images/cil-map.png); qproperty-iconSize: 40px 40px;}
 """
 
 MinButton = MenuButton + """
-QPushButton { qproperty-icon: url(images/icon_minimize.png);}
+QPushButton { qproperty-icon: url(images/icon_minimize.png); qproperty-iconSize: 40px 40px;}
 """
 
 CloseButton = MenuButton + """
-QPushButton { qproperty-icon: url(images/icon_close.png);}
+QPushButton { qproperty-icon: url(images/icon_close.png); qproperty-iconSize: 40px 40px;}
 """
 
-ccbiologo = MenuButton + """
+analyticlogo = MenuButton + """
 QPushButton:hover { background-color: rgba(255, 255, 255, 0); border: none;  border-radius: 5px;}
-QPushButton { qproperty-icon: url(images/logo.svg); qproperty-iconSize: 24px;}
+QPushButton { qproperty-icon: url(images/Logo_ICBT_Analytik_round.png); qproperty-iconSize: 40px 40px; }
 """
 
 DirectoryButton = """
@@ -294,62 +294,3 @@ QPushButton:disabled {
   color: rgb(69, 83, 100);
 }
 """
-
-# Descriptions from https://plip-tool.biotec.tu-dresden.de/plip-web/plip/help#section-interactions
-PYMOL_STYLES = {
-    "hydrophobic_interactions": {
-        "description": "reported between pairs of hydrophobic atoms",
-        "style": {
-            "dash_gap": 0.5,
-            "dash_color": "grey50",}
-    },
-
-    "hydrogen_bonds": {
-        "description": "reported between a hydrogen atom (covalently bound to a\n"
-                       "more electronegative donor) and another electronegative\n"
-                       "atom bearing a lone pair of electrons (acceptor)",
-        "style": {
-            "dash_color": "blue",}
-    },
-
-    "water_bridges": {
-        "description": "reported if water molecule is positioned between \n hydrogen bond donor and acceptor pairs",
-        "style": {
-            "dash_gap": 0.5,
-            "dash_color": "lightblue",
-            "dash_length": 0.6,}
-    },
-
-    "salt_bridges": {
-        "description": "reported between centers of opposite charges",
-        "style": {
-          "dash_gap": 0.5,
-          "dash_color": "yellow",
-          "dash_length": 0.6,}
-    },
-
-    "pi_stacks": {
-        "description": "reported between centers of aromatic rings", # (T-stacking: perpendicular & P-stacking: parallel displaced reported)
-        "style": {
-          "dash_gap": 0.3,
-          "dash_color": "smudge",
-          "dash_length": 0.6,}
-    },
-
-    "pi_cation_interactions": {
-        "description": "reported for each pairing of a positive charge and an aromatic ring",
-        "style": {}
-    },
-
-    "halogen_bonds": {
-        "description": "reported for each pairing of halogen bond acceptor and donor group",
-        "style": {}
-    },
-
-    "metal_complexes": {
-        "description": "reported for complexed metal ions",
-        "style": {
-            "dash_gap": 0.5,
-            "dash_color": "violetpurple",}
-    },
-}

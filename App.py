@@ -73,7 +73,7 @@ class MainWindow(QWidget):
         self.setWindowTitle('GC-MS Warping Tool')
 
         # Layout
-        self.setStyleSheet(styles.David)
+        self.setStyleSheet(styles.Levin)
         self.setMinimumSize(500, 800)
         self.setWindowFlags(Qt.FramelessWindowHint)
 
@@ -83,7 +83,7 @@ class MainWindow(QWidget):
 
         # Added MenuBar from Nicolas Imstepf
         self.MenuBar = MyBar(self)
-        self.MenuBar.setFixedHeight(30)
+        self.MenuBar.setFixedHeight(40)
         MainWindow.addWidget(self.MenuBar)
         
 
@@ -154,9 +154,12 @@ class MainWindow(QWidget):
         self.slider1_min = QLabel('0')
         self.slider1_max = QLabel('100')
         ParameterLayout.addWidget(QLabel(parameter1+(20-len(parameter1))*' '), 0, 0)
-        ParameterLayout.addWidget(self.slider1_min, 0, 1)
-        ParameterLayout.addWidget(self.slider1, 0, 2)
-        ParameterLayout.addWidget(self.slider1_max, 0, 3)
+        self.slider1_value_label = QLabel(str(self.slider1.value()))
+        self.slider1.valueChanged.connect(lambda: self.slider1_value_label.setText(str(self.slider1.value())))
+        ParameterLayout.addWidget(self.slider1_value_label, 0, 1)
+        ParameterLayout.addWidget(self.slider1_min, 0, 2)
+        ParameterLayout.addWidget(self.slider1, 0, 3)
+        ParameterLayout.addWidget(self.slider1_max, 0, 4)
         
 
         # Slider for the second parameter
@@ -171,9 +174,13 @@ class MainWindow(QWidget):
         self.slider2_min = QLabel('0')
         self.slider2_max = QLabel('100')
         ParameterLayout.addWidget(QLabel(parameter2+(20-len(parameter2))*' '), 1, 0)
-        ParameterLayout.addWidget(self.slider2_min, 1, 1)
-        ParameterLayout.addWidget(self.slider2, 1, 2)
-        ParameterLayout.addWidget(self.slider2_max, 1, 3)
+        self.slider2_value_label = QLabel(str(self.slider2.value()))
+        self.slider2.valueChanged.connect(lambda: self.slider2_value_label.setText(str(self.slider2.value())))
+        ParameterLayout.addWidget(self.slider2_value_label, 1, 1)
+        ParameterLayout.addWidget(self.slider2_min, 1, 2)
+        ParameterLayout.addWidget(self.slider2, 1, 3)
+        ParameterLayout.addWidget(self.slider2_max, 1, 4)
+
 
         ParameterGroupBox.setFixedHeight(100)
         ParameterGroupBox.setLayout(ParameterLayout)
@@ -289,9 +296,7 @@ class MainWindow(QWidget):
 
     def PerformeWarping(self) -> None:
         file_names = self.data_preparation.get_file_names()
-        print(file_names)
         file_names.append('All')
-        print(file_names)
         dialog = FileSelectionWindow(file_names, self)
         if dialog.exec_():
             selected_target = dialog.selected_file
