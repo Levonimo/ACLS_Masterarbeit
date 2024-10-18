@@ -269,11 +269,19 @@ class MainWindow(QWidget):
         if self.selected_folder:
             npy_files = [file for file in os.listdir(self.selected_folder) if file.endswith('.npy')]
             if npy_files:
+                npy_files.append('<New File>')
                 dialog = FileSelectionWindow(npy_files, self)
                 if dialog.exec_():
                     selected_Chromatograms = dialog.selected_file
-                    self.print_to_output(f'Chromatograms from {selected_Chromatograms} loaded.')
-                    self.chromatograms = self.data_preparation.get_list_of_chromatograms(selected_Chromatograms)
+                    if selected_Chromatograms == '<New File>':
+                        input_dialog = InputDialog(self)
+                        if input_dialog.exec_():
+                            input_word = input_dialog.input_text
+                            self.print_to_output(f'New File Named: {input_word}.npy')
+                            self.chromatograms = self.data_preparation.get_list_of_chromatograms(input_word, file_list=self.data_preparation.get_file_names())
+                    else:
+                        self.print_to_output(f'Chromatograms from {selected_Chromatograms} loaded.')
+                        self.chromatograms = self.data_preparation.get_list_of_chromatograms(selected_Chromatograms)
             else:
                 input_dialog = InputDialog(self)
                 if input_dialog.exec_():

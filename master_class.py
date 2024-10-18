@@ -51,7 +51,7 @@ class DataPreparation:
     def get_file_names(self):
         files = os.listdir(self.mzml_path)
         #remove the .mzML ending
-        files = [file.replace('.mzML','') for file in files]
+        files = [file.replace('.mzML','') for file in files if file.endswith('.mzML')]
         return files
     '''
     def interact_with_msdial(self, msdial_path, param_file_name, type="gcms"):
