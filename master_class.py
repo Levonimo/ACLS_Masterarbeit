@@ -53,44 +53,7 @@ class DataPreparation:
         #remove the .mzML ending
         files = [file.replace('.mzML','') for file in files if file.endswith('.mzML')]
         return files
-    '''
-    def interact_with_msdial(self, msdial_path, param_file_name, type="gcms"):
-        if not isinstance(msdial_path, str):
-            raise TypeError("msdial_path must be a string.")
-        if not os.path.isfile(msdial_path):
-            raise ValueError("msdial_path must be a valid file path.")
-        if not isinstance(param_file_name, str):
-            raise TypeError("param_file_name must be a string.")
-        if not isinstance(type, str):
-            raise TypeError("type must be a string.")
-        if type not in ["gcms", "lcms"]:
-            raise ValueError("type must be 'gcms' or 'lcms'.")
-
-        self.msdial_params = os.path.join(self.path, f'{param_file_name}.txt')
-        self.msdial_consol_app = msdial_path
-        self.type = type
-
-        # Replace all frontslashes with backslashes
-        msdial_app = frontslash_to_backslash(self.msdial_consol_app)
-        mzml_folder = frontslash_to_backslash(self.mzml_path)
-        msdial_folder = frontslash_to_backslash(self.msdial_path)
-        msdial_params_file = frontslash_to_backslash(self.msdial_params)
-
-        command = f"{msdial_app} {self.type} -i {mzml_folder} -o {msdial_folder} -m {msdial_params_file}"
-        subprocess.run(command, shell=True, check=True)
-
-    def convert_msdial_to_csv(self):
-        msdial_files = [file for file in os.listdir(self.msdial_path) if file.endswith('.msdial')]
-        if not msdial_files:
-            raise ValueError("No .msdial files found in the MSDIAL directory.")
-
-        for file in msdial_files:
-            data = pd.read_csv(os.path.join(self.msdial_path, file), sep='\t')
-            csv_file_name = file.replace('.msdial', '.csv')
-            data.to_csv(os.path.join(self.csv_path, csv_file_name), index=False)
-
-        print(f'Converted {len(msdial_files)} .msdial files to .csv')
-    '''
+    
     def get_retention_time(self):
         exp = pyopenms.MSExperiment()
         mzml_files = os.listdir(self.mzml_path)

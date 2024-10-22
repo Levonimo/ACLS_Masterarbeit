@@ -1,12 +1,19 @@
-#import master_class as mc
 import numpy as np
 
+def correlation_optimized_warping(reference_2D: np.ndarray, target_2D: np.ndarray, slack: int = 14, segments: int = 100) -> tuple[np.ndarray, np.ndarray]:
+    if reference.ndim != 1:
+        # Sum the reference signal along the second axis
+        reference_1D = np.sum(reference, axis=1)
 
+    if target.ndim != 1:
+        # Sum the target signal along the second axis
+        target_1D = np.sum(target, axis=1)
 
-def correlation_optimized_warping(reference, target, slack=14, segments=100):
-    ref_length = len(reference)
-    tar_length = len(target)
-
+    ref_length = len(reference_1D)
+    tar_length = len(target_1D)
+    if ref_length != tar_length:
+        raise ValueError("Reference and target signals must have the same length.")
+    
     # Define segment lengths
     segment_length = ref_length // segments
 
