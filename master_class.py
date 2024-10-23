@@ -2,7 +2,7 @@ import os
 import subprocess
 import numpy as np
 import pandas as pd
-import pyopenms
+import pyopenms as oms
 import copy as cp
 import math
 from sklearn.preprocessing import PolynomialFeatures
@@ -55,13 +55,13 @@ class DataPreparation:
         return files
     
     def get_retention_time(self):
-        exp = pyopenms.MSExperiment()
+        exp = oms.MSExperiment()
         mzml_files = os.listdir(self.mzml_path)
         if not mzml_files:
             raise ValueError("No mzML files found in the mzml directory.")
         
         mzml_file = mzml_files[0]
-        pyopenms.MzMLFile().load(os.path.join(self.mzml_path, mzml_file), exp)
+        oms.MzMLFile().load(os.path.join(self.mzml_path, mzml_file), exp)
         
         rt = [spectrum.getRT() / 60 for spectrum in exp if spectrum.getMSLevel() == 1]
         return np.array(rt)
@@ -75,8 +75,8 @@ class DataPreparation:
         if not os.path.isfile(file_path):
             raise ValueError("file_path must be a valid file path.")
 
-        exp = pyopenms.MSExperiment()
-        pyopenms.MzMLFile().load(file_path, exp)
+        exp = oms.MSExperiment()
+        oms.MzMLFile().load(file_path, exp)
         chromatogram = []
 
         for spectrum in exp:
@@ -269,4 +269,34 @@ class DataPreparation:
         scores = np.dot(Chromatograms, eigenvectors)
         loadings = np.dot(scores, eigenvectors.T)
         return scores, loadings, eigenvalues, eigenvectors
+    
+    def write_array_to_mzml(self, array, output_file):
+        # Check if folder "Warped_mzml" exists, if not create it
+        # Create an MSExperiment object
+        exp = oms.MSExperiment()
+
+        # Define the m/z values (y-axis) and RT values (x-axis)
+        mz_values = self.mZ_totlist
+        rt_values = self.get_retention_time()
+
+        # Iterate over the RT values (x-axis)
+        for rt_index, rt in enumerate(rt_values):
+            # Create a new MSSpectrum object for each RT
+            spectrum = oms.MSSpectrum()
+            spectrum.setRT(rt)
+
+            # Iterate over the m/z values (y-axis)
+            for mz_index, mz in enumerate(mz_values):
+                intensity = array[rt_index, mz_index]
+                if intensity > 0:  # Only add peaks with non-zero intensity
+                    peak = oms.Peak1D()
+                    peak.setMZ(mz)
+                    peak.setIntensity(intensity)
+                    spectrum.push_back(peak)
+
+            # Add the spectrum to the experiment
+            exp.addSpectrum(spectrum)
+
+        # Write the experiment to an mzML file
+        oms.MzMLFile().store(output_file, exp)
 

@@ -124,7 +124,7 @@ target = Chromatograms[data_files[8]]
 #reference = np.sin(np.linspace(0, 4 * np.pi, 100))[:, None] + np.random.normal(0, 0.1, (100, 50))
 #target = np.sin(np.linspace(0, 4 * np.pi, 110))[:, None] + np.random.normal(0, 0.1, (110, 50))
 
-'''
+
 
 # Perform an optimization for the correlation optimized warping with slack and segments parameters
 def objective(x):
@@ -133,12 +133,11 @@ def objective(x):
     return hole_score
 
 # set the bounds for the slack and segments parameters and permute the values
-bounds = [(6, 20), (50, 150)]
+bounds = [(10, 30), (50, 200)]
 x0 = np.random.randint(6, 20), np.random.randint(50, 150)
-
+'''
 iter = 200
-best_score = np.inf
-best_params = None
+
 for i in range(iter):
     x = np.random.randint(6, 20), np.random.randint(50, 150)
     score = objective(x)
@@ -150,9 +149,29 @@ for i in range(iter):
 print(f"Best Score: {best_score}")
 print(f"Best Parameters: {best_params}")
 '''
+best_score = -np.inf
+best_params = None
+score_matrix = np.zeros((bounds[0][1] - bounds[0][0], bounds[1][1] - bounds[1][0]))
+for i in range(bounds[0][0], bounds[0][1]):
+    for j in range(bounds[1][0], bounds[1][1]):
+        score = objective([i, j])
+        score_matrix[i - bounds[0][0], j - bounds[1][0]] = score
+        if score > best_score:
+            best_score = score
+            best_params = [i, j]
+        print(f"Score: {score} - Parameters: {i, j} - Best Score: {best_score} - Best Parameters: {best_params}")
 
 
-best_params = [19, 68]
+# Plot the score matrix
+plt.imshow(score_matrix, aspect='auto', cmap='plasma', origin='lower')
+plt.axes().set_xticks(np.arange(bounds[1][1] - bounds[1][0]))
+plt.axes().set_yticks(np.arange(bounds[0][1] - bounds[0][0]))
+plt.colorbar()
+plt.xlabel('Segments')
+plt.ylabel('Slack')
+plt.title('Score Matrix')
+plt.show()
+#best_params = [19, 68]
 
 
 
