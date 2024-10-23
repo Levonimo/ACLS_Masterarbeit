@@ -11,7 +11,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 
-from Warping import correlation_optimized_warping as COW
+
 
 def frontslash_to_backslash(string):
     if not isinstance(string, str):
@@ -219,10 +219,11 @@ class DataPreparation:
 
         return compressed_chroma
 
+    '''
     def warping(self, reference, target):
         warped_target, _ = COW(reference,target)
         return warped_target
-
+    '''
     def perform_pca(self,chromatograms, n_components=10):
         """
         Führt eine Principal Component Analysis (PCA) auf einer Matrix von Gaschromatogrammen durch.
