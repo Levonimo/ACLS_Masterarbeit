@@ -67,8 +67,8 @@ PATH = "F:/Documents/MasterArbeit/Data"
 
 
 Data = mc.DataPreparation(PATH)
-data_files = Data.get_name_mzml_files()
-Chromatograms = Data.get_list_of_chromatograms(PATH+'/Chromatograms.npy', source_type = 'FromNPY')
+data_files = Data.get_file_names()
+Chromatograms = Data.get_list_of_chromatograms('Chromatograms', data_files)
 rt = Data.get_retention_time()
 # Example usage
 # Create example 2D GC-MS data
@@ -76,33 +76,34 @@ rt = Data.get_retention_time()
 
 reference = Chromatograms[data_files[7]]
 target = Chromatograms[data_files[8]]
-reference = np.sum(reference, axis = 1)
-target = np.sum(target, axis = 1)
-#reference = np.sin(np.linspace(0, 4 * np.pi, 100))[:, None] + np.random.normal(0, 0.1, (100, 50))
-#target = np.sin(np.linspace(0, 4 * np.pi, 110))[:, None] + np.random.normal(0, 0.1, (110, 50))
 
-warped_target, warp_path = correlation_optimized_warping(reference, target)
+warped_target, path, cost = dynamic_time_warping(reference, target)
 
 # Print the results
-print("Warping Path:", warp_path)
-print("Warped Target Shape:", warped_target.shape)
 
 
 import matplotlib.pyplot as plt
 
+# Plot the original and warped data in the same plot
 
-plt.plot(rt,reference)
-plt.plot(rt,target)
-plt.xlabel("Retention Time")
-plt.ylabel("Intensity")
-plt.title("Original Data")
-plt.show()
+fig, axs = plt.subplots(2, 1, figsize=(10, 8))
 
+# Plot the original data in the first subplot
+axs[0].plot(rt, np.sum(reference, axis=1), label='Original Reference')
+axs[0].plot(rt, np.sum(target, axis=1), label='Original Target')
+axs[0].set_xlabel("Retention Time")
+axs[0].set_ylabel("Intensity")
+axs[0].set_title("Original Data")
+axs[0].legend()
 
-plt.plot(rt,reference)
-plt.plot(rt,warped_target)
-plt.xlabel("Retention Time")
-plt.ylabel("Intensity")
-plt.title("Warped Data")
+# Plot the warped data in the second subplot
+axs[1].plot(rt, np.sum(reference, axis=1), label='Original Reference')
+axs[1].plot(rt, np.sum(warped_target, axis=1), label='Warped Target')
+axs[1].set_xlabel("Retention Time")
+axs[1].set_ylabel("Intensity")
+axs[1].set_title("Warped Data")
+axs[1].legend()
+
+plt.tight_layout()
 plt.show()
 

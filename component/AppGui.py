@@ -1,68 +1,25 @@
 import sys
-import master_class as mc
-from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QPushButton,
-                              QFileDialog, QLabel, QTextEdit, QHBoxLayout, 
-                              QGridLayout, QLayout, QDialog, QListWidget, 
-                              QLineEdit, QGroupBox, QSlider)
-from PyQt5.QtGui import QPixmap, QIcon
-from PyQt5.QtCore import Qt, QEvent
 import os
 import numpy as np
-import styles
-from components import ComboBox, MyBar
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from io import BytesIO
 from copy import copy
 
-class InputDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle('New File-Name')
-        self.setGeometry(200, 200, 300, 100)
+from . import master_class as mc
+from . import styles
+from .Warping import correlation_optimized_warping as COW
 
-        layout = QVBoxLayout()
+from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton,
+                              QFileDialog, QLabel, QTextEdit,  
+                              QGridLayout, QGroupBox, QSlider)
+from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtCore import Qt
 
-        self.label = QLabel('Please enter a File-Name:', self)
-        layout.addWidget(self.label)
+from .ExternalGui import InputDialog, FileSelectionWindow, PCAWindow
+from .components import MyBar
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
-        self.input_field = QLineEdit(self)
-        layout.addWidget(self.input_field)
 
-        self.submit_button = QPushButton('Submit', self)
-        self.submit_button.clicked.connect(self.submit)
-        layout.addWidget(self.submit_button)
 
-        self.setLayout(layout)
-        self.input_text = None
-
-    def submit(self):
-        self.input_text = self.input_field.text()
-        self.accept()
-
-class FileSelectionWindow(QDialog):
-    def __init__(self, file_names, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle('Select a File')
-        self.setGeometry(150, 150, 400, 300)
-
-        layout = QVBoxLayout()
-
-        self.list_widget = QListWidget()
-        self.list_widget.addItems(file_names)
-        layout.addWidget(self.list_widget)
-
-        self.select_button = QPushButton('Select')
-        self.select_button.clicked.connect(self.select_file)
-        layout.addWidget(self.select_button)
-
-        self.setLayout(layout)
-        self.selected_file = None
-
-    def select_file(self):
-        selected_items = self.list_widget.selectedItems()
-        if selected_items:
-            self.selected_file = selected_items[0].text()
-            self.accept()
 
 
 class MainWindow(QWidget):
@@ -124,9 +81,14 @@ class MainWindow(QWidget):
         self.btn_plot.setEnabled(False)
         InputLayout.addWidget(self.btn_plot, 5, 0)
 
+        self.btn_analyse = QPushButton('Statistic Analyse', self)
+        self.btn_analyse.clicked.connect(self.StatisticAnalyse)
+        self.btn_analyse.setEnabled(False)
+        InputLayout.addWidget(self.btn_analyse, 6, 0)
+
 
         # Buttons in die erste Spalte
-        for i in range(6, 8):
+        for i in range(7, 8):
             button = QPushButton(f'Button {i + 1}', self)
             InputLayout.addWidget(button, i, 0)  # Positioniere die Buttons in Spalte 0, Zeilen 0-7
 
@@ -149,14 +111,14 @@ class MainWindow(QWidget):
         # Slider for the first parameter
         parameter1 = 'Slack'
         self.slider1 = QSlider(Qt.Horizontal)
-        self.slider1.setMinimum(0)
-        self.slider1.setMaximum(20)
-        self.slider1.setValue(10)
+        self.slider1.setMinimum(1)
+        self.slider1.setMaximum(40)
+        self.slider1.setValue(14)
         self.slider1.setTickPosition(QSlider.TicksBelow)
         self.slider1.setTickInterval(2)
         self.slider1.setSingleStep(1)
-        self.slider1_min = QLabel('0')
-        self.slider1_max = QLabel('100')
+        self.slider1_min = QLabel('1')
+        self.slider1_max = QLabel('40')
         ParameterLayout.addWidget(QLabel(parameter1+(20-len(parameter1))*' '), 0, 0)
         self.slider1_value_label = QLabel(str(self.slider1.value()))
         self.slider1.valueChanged.connect(lambda: self.slider1_value_label.setText(str(self.slider1.value())))
@@ -167,16 +129,16 @@ class MainWindow(QWidget):
         
 
         # Slider for the second parameter
-        parameter2 = 'Segment Length'
+        parameter2 = 'Segments'
         self.slider2 = QSlider(Qt.Horizontal)
-        self.slider2.setMinimum(0)
-        self.slider2.setMaximum(100)
-        self.slider2.setValue(50)
+        self.slider2.setMinimum(10)
+        self.slider2.setMaximum(300)
+        self.slider2.setValue(60)
         self.slider2.setTickPosition(QSlider.TicksBelow)
-        self.slider2.setTickInterval(10)
-        self.slider2.setSingleStep(1)
-        self.slider2_min = QLabel('0')
-        self.slider2_max = QLabel('100')
+        self.slider2.setTickInterval(20)
+        self.slider2.setSingleStep(5)
+        self.slider2_min = QLabel('10')
+        self.slider2_max = QLabel('1000')
         ParameterLayout.addWidget(QLabel(parameter2+(20-len(parameter2))*' '), 1, 0)
         self.slider2_value_label = QLabel(str(self.slider2.value()))
         self.slider2.valueChanged.connect(lambda: self.slider2_value_label.setText(str(self.slider2.value())))
@@ -294,12 +256,13 @@ class MainWindow(QWidget):
 
     def PerformeWarping(self) -> None:
         file_names = self.data_preparation.get_file_names()
+        self.selected_target = None
         file_names.append('All')
         dialog = FileSelectionWindow(file_names, self)
         if dialog.exec_():
-            selected_target = dialog.selected_file
-            if selected_target == 'All':
-                selected_target = self.data_preparation.get_file_names()
+            self.selected_target = dialog.selected_file
+            if self.selected_target == 'All':
+                self.selected_target = self.data_preparation.get_file_names()
         else:
             self.print_to_output('Please select a file to compare with.')
             return
@@ -309,22 +272,24 @@ class MainWindow(QWidget):
         segment_length = self.slider2.value()
 
 
-        if self.selected_reference_file and selected_target:
+        if self.selected_reference_file and self.selected_target:
             reference = self.data_preparation.get_chromatogram(self.selected_reference_file)
             self.warped_chromatograms = {}
             self.warp_paths = {}
-            if isinstance(selected_target, str):
-                selected_target = [selected_target]
-            for file in selected_target:
-                if file != self.selected_reference_file:
-                    target = self.data_preparation.get_chromatogram(file)
-                    warped_target, warp_path = mc.COW(reference, target, slack=slack, segments=segment_length)
-                    self.warped_chromatograms[file] = warped_target
-                    self.warp_paths[file] = warp_path
-                    self.print_to_output(f'Warped {file} against Reference {self.selected_reference_file}.')
+            self.similarity_scores = {}
+            if isinstance(self.selected_target, str):
+                self.selected_target = [self.selected_target]
+            for target_file in self.selected_target:
+                if target_file != self.selected_reference_file:
+                    target = self.data_preparation.get_chromatogram(target_file)
+                    warped_target, warp_path, score = COW(reference_2D = reference, target_2D = target, slack=slack, segments=segment_length)
+                    self.warped_chromatograms[target_file] = warped_target
+                    self.warp_paths[target_file] = warp_path
+                    self.similarity_scores[target_file] = score
+                    self.print_to_output(f'Warped {target_file} against Reference {self.selected_reference_file}.')
                 else:
-                    self.warped_chromatograms[file] = reference
-        elif selected_target:
+                    self.warped_chromatograms[target_file] = reference
+        elif self.selected_target:
             self.print_to_output('Please select a reference file.')
         elif self.selected_reference_file:
             self.print_to_output('Please select a file to compare with.')
@@ -332,6 +297,7 @@ class MainWindow(QWidget):
             self.print_to_output('Please select a file to compare with and a reference file.')
 
         self.btn_plot.setEnabled(True)
+        self.btn_analyse.setEnabled(True)
 
     
     # Plotting the chromatograms all unwarped chromatograms in the top image and all warped chromatograms in the lower image
@@ -366,6 +332,13 @@ class MainWindow(QWidget):
         self.image_low.setPixmap(plot_chromatograms(self.warped_chromatograms, 'Warped Chromatograms'))
 
         self.print_to_output('Chromatograms plotted.')
+
+    def StatisticAnalyse(self) -> None:
+        dialog = PCAWindow(self.selected_target, self)
+        if dialog.exec_():
+            pass
+
+        
 
 
 
