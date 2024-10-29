@@ -24,7 +24,7 @@ import sys
 # add betplip path to directory 
 sys.path.insert(1, os.path.dirname(__file__))
 
-from component import InteractionGUI
+from component import MainWindow
 
 
 # global reference to avoid garbage collection of our dialog

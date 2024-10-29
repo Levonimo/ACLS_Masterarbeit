@@ -2,6 +2,7 @@
 Personalized PyQt stylesheets
 
 Adapted from 
+  - Nicola Imstepf's Master Thesis 
   - David Patsch's AlphaDock
   - Colin Duquesnoy's QDarkStyleSheet (https://github.com/ColinDuquesnoy/QDarkStyleSheet)
 
@@ -66,42 +67,62 @@ QTextEdit {
 }
 
 QTextEdit:hover {
-  border: 2px solid red;
+  border: 1px solid white;
   color: white;
 }
 
-QComboBox{
-	background-color: rgb(27, 29, 35);
-	border-radius: 3px;
-	border: 2px solid rgb(33, 37, 43);
-	padding: 2px;
-	color: rgb(255, 255, 255);
-	padding-left: 10px;
-}
-QComboBox:hover{
-	border: 2px solid rgb(64, 71, 88);
-}
-QComboBox::drop-down {
-	subcontrol-origin: padding;
-	subcontrol-position: bottom left;
-	border-left-width: 3px;
-	border-left-color: rgba(39, 44, 54, 150);
-	border-left-style: solid;
-	border-top-right-radius: 3px;
-	border-bottom-right-radius: 3px;	
-	background-position: center;
-	background-image: url(images/cil-arrow-bottom.png);
-	background-repeat: no-reperat;
-}
-QComboBox::drop-down:disabled{
-  background-image: url(images/transparent.png)
+QComboBox {
+  background-color: #19232D;
+  border: 1px solid #32414B;
+  border-radius: 4px;
+  padding: 2px;
+  padding-left: 5px;
+  color: #E0E1E3;
+  selection-color: #19232D;
+  selection-background-color: #E0E1E3;
 }
 QComboBox QAbstractItemView {
-	color: rgb(62, 172, 111);
-	background-color: rgb(33, 37, 43);
-	padding: 2px;
-	selection-background-color: rgb(39, 44, 54);
+  background-color: #19232D;
+  color: #E0E1E3;
+  selection-color: #19232D;
+  selection-background-color: #E0E1E3;
 }
+QComboBox::drop-down {
+  subcontrol-origin: padding;
+  subcontrol-position: top right;
+  width: 20px;
+  border-left-width: 1px;
+  border-left-color: #32414B;
+  border-left-style: solid;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+}
+QComboBox::down-arrow {
+  image: url("images/arrow_down.png");
+}
+QComboBox::down-arrow:on {
+  top: 1px;
+  left: 1px;
+}
+QComboBox QAbstractItemView {
+  border: 1px solid #32414B;
+  border-radius: 2px;
+  background-color: #19232D;
+}
+QComboBox QAbstractItemView::item {
+  height: 20px;
+  color: #E0E1E3;
+  padding-left: 5px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+QComboBox QAbstractItemView::item:selected {
+  background-color: #32414B;
+}
+QComboBox QAbstractItemView::item:hover {
+  background-color: #32414B;
+}
+
 
 
 QGroupBox {
@@ -186,7 +207,7 @@ QMenu::icon:checked { /* when user selects item using mouse or keyboard */
 
 
 QPushButton {
-	border: 2px solid rgb(52, 59, 72);
+	border: 1px solid rgb(57, 65, 80);
 	border-radius: 5px;	
 	background-color: rgb(52, 59, 72);
 	color: rgb(255, 255, 255);
@@ -194,11 +215,11 @@ QPushButton {
 }
 QPushButton:hover {
 	background-color: rgb(57, 65, 80);
-	border: 2px solid rgb(61, 70, 86);
+	border: 1px solid rgb(61, 70, 86);
 }
 QPushButton:pressed {	
 	background-color: rgb(35, 40, 49);
-	border: 2px solid rgb(43, 50, 61);
+	border: 1px solid rgb(43, 50, 61);
 }
 
 
@@ -227,7 +248,7 @@ QSpinBox::down-arrow:disabled { image: url(images/transparent.png); width: 10px;
 
 
 QWidget {
-background-color: rgb(40, 44, 52);
+background-color: rgb(52, 59, 72);
 }
 QWidget:disabled {
   color: rgb(69, 83, 100);
