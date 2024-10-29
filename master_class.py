@@ -2,7 +2,7 @@ import os
 import subprocess
 import numpy as np
 import pandas as pd
-import pyopenms
+import pyopenms as oms
 import copy as cp
 import math
 from sklearn.preprocessing import PolynomialFeatures
@@ -11,7 +11,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 
-from Warping import correlation_optimized_warping as COW
+
 
 def frontslash_to_backslash(string):
     if not isinstance(string, str):
@@ -53,52 +53,15 @@ class DataPreparation:
         #remove the .mzML ending
         files = [file.replace('.mzML','') for file in files if file.endswith('.mzML')]
         return files
-    '''
-    def interact_with_msdial(self, msdial_path, param_file_name, type="gcms"):
-        if not isinstance(msdial_path, str):
-            raise TypeError("msdial_path must be a string.")
-        if not os.path.isfile(msdial_path):
-            raise ValueError("msdial_path must be a valid file path.")
-        if not isinstance(param_file_name, str):
-            raise TypeError("param_file_name must be a string.")
-        if not isinstance(type, str):
-            raise TypeError("type must be a string.")
-        if type not in ["gcms", "lcms"]:
-            raise ValueError("type must be 'gcms' or 'lcms'.")
-
-        self.msdial_params = os.path.join(self.path, f'{param_file_name}.txt')
-        self.msdial_consol_app = msdial_path
-        self.type = type
-
-        # Replace all frontslashes with backslashes
-        msdial_app = frontslash_to_backslash(self.msdial_consol_app)
-        mzml_folder = frontslash_to_backslash(self.mzml_path)
-        msdial_folder = frontslash_to_backslash(self.msdial_path)
-        msdial_params_file = frontslash_to_backslash(self.msdial_params)
-
-        command = f"{msdial_app} {self.type} -i {mzml_folder} -o {msdial_folder} -m {msdial_params_file}"
-        subprocess.run(command, shell=True, check=True)
-
-    def convert_msdial_to_csv(self):
-        msdial_files = [file for file in os.listdir(self.msdial_path) if file.endswith('.msdial')]
-        if not msdial_files:
-            raise ValueError("No .msdial files found in the MSDIAL directory.")
-
-        for file in msdial_files:
-            data = pd.read_csv(os.path.join(self.msdial_path, file), sep='\t')
-            csv_file_name = file.replace('.msdial', '.csv')
-            data.to_csv(os.path.join(self.csv_path, csv_file_name), index=False)
-
-        print(f'Converted {len(msdial_files)} .msdial files to .csv')
-    '''
+    
     def get_retention_time(self):
-        exp = pyopenms.MSExperiment()
+        exp = oms.MSExperiment()
         mzml_files = os.listdir(self.mzml_path)
         if not mzml_files:
             raise ValueError("No mzML files found in the mzml directory.")
         
         mzml_file = mzml_files[0]
-        pyopenms.MzMLFile().load(os.path.join(self.mzml_path, mzml_file), exp)
+        oms.MzMLFile().load(os.path.join(self.mzml_path, mzml_file), exp)
         
         rt = [spectrum.getRT() / 60 for spectrum in exp if spectrum.getMSLevel() == 1]
         return np.array(rt)
@@ -112,8 +75,8 @@ class DataPreparation:
         if not os.path.isfile(file_path):
             raise ValueError("file_path must be a valid file path.")
 
-        exp = pyopenms.MSExperiment()
-        pyopenms.MzMLFile().load(file_path, exp)
+        exp = oms.MSExperiment()
+        oms.MzMLFile().load(file_path, exp)
         chromatogram = []
 
         for spectrum in exp:
@@ -256,10 +219,11 @@ class DataPreparation:
 
         return compressed_chroma
 
+    '''
     def warping(self, reference, target):
         warped_target, _ = COW(reference,target)
         return warped_target
-
+    '''
     def perform_pca(self,chromatograms, n_components=10):
         """
         Führt eine Principal Component Analysis (PCA) auf einer Matrix von Gaschromatogrammen durch.
@@ -305,4 +269,34 @@ class DataPreparation:
         scores = np.dot(Chromatograms, eigenvectors)
         loadings = np.dot(scores, eigenvectors.T)
         return scores, loadings, eigenvalues, eigenvectors
+    
+    def write_array_to_mzml(self, array, output_file):
+        # Check if folder "Warped_mzml" exists, if not create it
+        # Create an MSExperiment object
+        exp = oms.MSExperiment()
+
+        # Define the m/z values (y-axis) and RT values (x-axis)
+        mz_values = self.mZ_totlist
+        rt_values = self.get_retention_time()
+
+        # Iterate over the RT values (x-axis)
+        for rt_index, rt in enumerate(rt_values):
+            # Create a new MSSpectrum object for each RT
+            spectrum = oms.MSSpectrum()
+            spectrum.setRT(rt)
+
+            # Iterate over the m/z values (y-axis)
+            for mz_index, mz in enumerate(mz_values):
+                intensity = array[rt_index, mz_index]
+                if intensity > 0:  # Only add peaks with non-zero intensity
+                    peak = oms.Peak1D()
+                    peak.setMZ(mz)
+                    peak.setIntensity(intensity)
+                    spectrum.push_back(peak)
+
+            # Add the spectrum to the experiment
+            exp.addSpectrum(spectrum)
+
+        # Write the experiment to an mzML file
+        oms.MzMLFile().store(output_file, exp)
 

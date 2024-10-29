@@ -149,14 +149,14 @@ class MainWindow(QWidget):
         # Slider for the first parameter
         parameter1 = 'Slack'
         self.slider1 = QSlider(Qt.Horizontal)
-        self.slider1.setMinimum(0)
-        self.slider1.setMaximum(20)
-        self.slider1.setValue(10)
+        self.slider1.setMinimum(1)
+        self.slider1.setMaximum(40)
+        self.slider1.setValue(14)
         self.slider1.setTickPosition(QSlider.TicksBelow)
         self.slider1.setTickInterval(2)
         self.slider1.setSingleStep(1)
-        self.slider1_min = QLabel('0')
-        self.slider1_max = QLabel('100')
+        self.slider1_min = QLabel('1')
+        self.slider1_max = QLabel('40')
         ParameterLayout.addWidget(QLabel(parameter1+(20-len(parameter1))*' '), 0, 0)
         self.slider1_value_label = QLabel(str(self.slider1.value()))
         self.slider1.valueChanged.connect(lambda: self.slider1_value_label.setText(str(self.slider1.value())))
@@ -167,16 +167,16 @@ class MainWindow(QWidget):
         
 
         # Slider for the second parameter
-        parameter2 = 'Segment Length'
+        parameter2 = 'Segments'
         self.slider2 = QSlider(Qt.Horizontal)
-        self.slider2.setMinimum(0)
-        self.slider2.setMaximum(100)
-        self.slider2.setValue(50)
+        self.slider2.setMinimum(10)
+        self.slider2.setMaximum(300)
+        self.slider2.setValue(60)
         self.slider2.setTickPosition(QSlider.TicksBelow)
-        self.slider2.setTickInterval(10)
-        self.slider2.setSingleStep(1)
-        self.slider2_min = QLabel('0')
-        self.slider2_max = QLabel('100')
+        self.slider2.setTickInterval(20)
+        self.slider2.setSingleStep(5)
+        self.slider2_min = QLabel('10')
+        self.slider2_max = QLabel('1000')
         ParameterLayout.addWidget(QLabel(parameter2+(20-len(parameter2))*' '), 1, 0)
         self.slider2_value_label = QLabel(str(self.slider2.value()))
         self.slider2.valueChanged.connect(lambda: self.slider2_value_label.setText(str(self.slider2.value())))
@@ -306,7 +306,7 @@ class MainWindow(QWidget):
         
         # get slack and segment length from sliders
         slack = self.slider1.value()
-        segment_length = self.slider2.value()
+        segments = self.slider2.value()
 
 
         if self.selected_reference_file and selected_target:
@@ -315,10 +315,10 @@ class MainWindow(QWidget):
             self.warp_paths = {}
             if isinstance(selected_target, str):
                 selected_target = [selected_target]
-            for file in selected_target:
+            for file in selected_target: 
                 if file != self.selected_reference_file:
                     target = self.data_preparation.get_chromatogram(file)
-                    warped_target, warp_path = mc.COW(reference, target, slack=slack, segments=segment_length)
+                    warped_target, warp_path = mc.COW(reference, target, slack=slack, segments=segments)
                     self.warped_chromatograms[file] = warped_target
                     self.warp_paths[file] = warp_path
                     self.print_to_output(f'Warped {file} against Reference {self.selected_reference_file}.')
