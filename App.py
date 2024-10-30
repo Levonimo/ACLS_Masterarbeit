@@ -78,7 +78,7 @@ class MainWindow(QWidget):
 
         # Layout
         self.setStyleSheet(styles.Levin)
-        self.setMinimumSize(900, 1200)
+        self.setMinimumSize(700, 1000)
         self.setWindowFlags(Qt.FramelessWindowHint)
 
         # Hauptlayout - ein Gitterlayout
