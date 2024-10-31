@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton,
                               QGridLayout, QGroupBox, QSlider)
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt
+import pyqtgraph as pg
 
 from .ExternalGui import InputDialog, FileSelectionWindow, PCAWindow
 from .components import MyBar
