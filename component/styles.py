@@ -253,6 +253,10 @@ background-color: rgb(52, 59, 72);
 QWidget:disabled {
   color: rgb(69, 83, 100);
 }
+
+
+
+
 """
 
 MenuButton = """
