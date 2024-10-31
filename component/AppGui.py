@@ -329,7 +329,7 @@ class MainWindow(QWidget):
         self.plot_graph_top.plot(rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
         for name, chromatogram in self.chromatograms.items():
             if name in self.selected_target:
-                self.plot_graph_top.plot(rt, np.sum(chromatogram, axis=1), pen=pg.mkPen(color=(0, 0, 0))
+                self.plot_graph_top.plot(rt, np.sum(chromatogram, axis=1))
         self.plot_graph_top.setTitle('Unwarped Chromatograms')
         self.plot_graph_top.setLabel('left', 'Intensity')
         self.plot_graph_top.setLabel('bottom', 'Retention Time')
@@ -375,10 +375,9 @@ class MainWindow(QWidget):
         
 
 
-'''
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = MainWindow()
-    ex.show()
-    sys.exit(app.exec_())
-'''
+
+# if __name__ == '__main__':
+#     app = QApplication(sys.argv)
+#     ex = MainWindow()
+#     ex.show()
+#     sys.exit(app.exec_())
