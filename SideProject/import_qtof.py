@@ -26,6 +26,33 @@ def mzml_to_hdf5(mzml_filename, hdf5_filename):
         print(f"Die Daten wurden erfolgreich in '{hdf5_filename}' gespeichert.")
 
 
+def mzml_to_array(self, file_path):
+    if not isinstance(file_path, str):
+        raise TypeError("file_path must be a string.")
+    if not os.path.isfile(file_path):
+        raise ValueError("file_path must be a valid file path.")
+
+    exp = MSExperiment()
+    MzMLFile().load(file_path, exp)
+    chromatogram = []
+
+    
+
+    for spectrum in exp:
+        if spectrum.getMSLevel() == 1:
+            mz, intensity = spectrum.get_peaks()
+            
+
+            full_intensity = np.zeros(len(self.mZ_totlist))
+            bins = np.digitize(mz, self.mZ_totlist)
+            full_intensity[bins - 1] = intensity
+
+            chromatogram.append(full_intensity.tolist())
+    chromatogram = self.compression_of_spectra(np.array(chromatogram))
+    return np.array(chromatogram)
+
+
+
 # Funktion zum Laden der HDF5-Datei und Anzeigen der Daten
 def load_hdf5(hdf5_filename):
     data = []
