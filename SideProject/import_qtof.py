@@ -26,7 +26,7 @@ def mzml_to_hdf5(mzml_filename, hdf5_filename):
         print(f"Die Daten wurden erfolgreich in '{hdf5_filename}' gespeichert.")
 
 
-def mzml_to_array(self, file_path):
+def mzml_to_array(file_path, mZ_totlist):
     if not isinstance(file_path, str):
         raise TypeError("file_path must be a string.")
     if not os.path.isfile(file_path):
@@ -43,12 +43,11 @@ def mzml_to_array(self, file_path):
             mz, intensity = spectrum.get_peaks()
             
 
-            full_intensity = np.zeros(len(self.mZ_totlist))
-            bins = np.digitize(mz, self.mZ_totlist)
+            full_intensity = np.zeros(len(mZ_totlist))
+            bins = np.digitize(mz, mZ_totlist)
             full_intensity[bins - 1] = intensity
 
             chromatogram.append(full_intensity.tolist())
-    chromatogram = self.compression_of_spectra(np.array(chromatogram))
     return np.array(chromatogram)
 
 
@@ -116,24 +115,53 @@ def plot_chromatogram(df):
     plt.show()
 
 # Define path to the mzML file
-PATH = 'F:/Documents/MasterArbeit/QTOF_DATA/'
-EXPORT_PATH = 'F:/Documents/MasterArbeit/ACLS_Masterarbeit/SideProject/Data/'
-#convert_d_to_mzml(PATH)
+#PATH = 'F:/Documents/MasterArbeit/QTOF_DATA/'
+#EXPORT_PATH = 'F:/Documents/MasterArbeit/ACLS_Masterarbeit/SideProject/Data/'
+PATH = 'C:/Users/wilv/Documents/Masterarbeit/QTOF-DATA/'
+EXPORT_PATH = 'C:/Users/wilv/Documents/Masterarbeit/ACLS_Masterarbeit/SideProject/Data/'
+# t1 = t.time()
+# convert_d_to_mzml(PATH)
+# t2 = t.time()
+# print(f"Time: {t2-t1} s")
+
+# Time to convert .D files to .mzML files: 400 s on WorkPC
+
+
 FILENAME = 'Larve_washed_02.mzML'
 # Beispiel: Verwende die Funktion
 #mzml_to_hdf5(PATH+"mzml/"+FILENAME, EXPORT_PATH+"daten.h5")
 
+
+
+# Import the mzML file and convert it to an array
+mzml_file = os.path.join(PATH, "mzml", FILENAME)
+
+# Define the total m/z list
+mZ_totlist = np.arange(20, 500.00001, 0.00001)
+print(len(mZ_totlist))
 t1 = t.time()
-# Verwende die Funktion zum Laden der HDF5-Datei
-df = load_hdf5_to_dask(EXPORT_PATH+"daten.h5")
+chromatogram = mzml_to_array(mzml_file, mZ_totlist)
 t2 = t.time()
 print(f"Time: {t2-t1} s")
 
-t1 = t.time()
-# Verwende die Funktion zum Filtern der Daten
-df_filtered = mass_defect_filter(df, 2, 0.01)
-t2 = t.time()
-print(f"Time: {t2-t1} s")
+# Save the chromatogram as a h5 file
+with h5py.File(EXPORT_PATH+"chromatogram.h5", "w") as f:
+    f.create_dataset("chromatogram", data=chromatogram)
+    print(f"Die Daten wurden erfolgreich in '{EXPORT_PATH+'chromatogram.h5'}' gespeichert.")
 
-# Verwende die Funktion zum Plotten des Chromatogramms
-plot_chromatogram(df_filtered.compute())
+
+
+# t1 = t.time()
+# # Verwende die Funktion zum Laden der HDF5-Datei
+# df = load_hdf5_to_dask(EXPORT_PATH+"daten.h5")
+# t2 = t.time()
+# print(f"Time: {t2-t1} s")
+
+# t1 = t.time()
+# # Verwende die Funktion zum Filtern der Daten
+# df_filtered = mass_defect_filter(df, 2, 0.01)
+# t2 = t.time()
+# print(f"Time: {t2-t1} s")
+
+# # Verwende die Funktion zum Plotten des Chromatogramms
+# plot_chromatogram(df_filtered.compute())
