@@ -33,3 +33,7 @@ with h5py.File(os.path.join(PATH, 'daten.h5'), 'r') as f:
 t2 = t.time()
 
 print(f"Time: {t2-t1} s")
+
+t1 = t.time()
+
+# Iterate thru the groups and datasets and only remove all values that 
