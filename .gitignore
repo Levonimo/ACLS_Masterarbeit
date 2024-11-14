@@ -2,3 +2,7 @@
 __pycache__/*
 # ignore all files in .pyc files
 *.pyc
+
+# ignore all .h5 files and the directory that contains them
+*.h5
+SideProject/Data/*
