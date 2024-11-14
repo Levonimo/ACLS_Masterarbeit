@@ -27,6 +27,32 @@ def mzml_to_hdf5(mzml_filename, hdf5_filename):
         print(f"Die Daten wurden erfolgreich in '{hdf5_filename}' gespeichert.")
 
 
+def mzml_to_array(file_path, mZ_totlist):
+    if not isinstance(file_path, str):
+        raise TypeError("file_path must be a string.")
+    if not os.path.isfile(file_path):
+        raise ValueError("file_path must be a valid file path.")
+
+    exp = MSExperiment()
+    MzMLFile().load(file_path, exp)
+    chromatogram = []
+
+    
+
+    for spectrum in exp:
+        if spectrum.getMSLevel() == 1:
+            mz, intensity = spectrum.get_peaks()
+            
+
+            full_intensity = np.zeros(len(mZ_totlist))
+            bins = np.digitize(mz, mZ_totlist)
+            full_intensity[bins - 1] = intensity
+
+            chromatogram.append(full_intensity.tolist())
+    return np.array(chromatogram)
+
+
+
 # Funktion zum Laden der HDF5-Datei und Anzeigen der Daten
 def load_hdf5(hdf5_filename):
     data = []
@@ -153,12 +179,22 @@ def get_all_unique_mz(chromatogram):
     return set(all_mz)
 
 # Define path to the mzML file
-PATH = 'F:/Documents/MasterArbeit/QTOF_DATA/'
-EXPORT_PATH = 'F:/Documents/MasterArbeit/ACLS_Masterarbeit/SideProject/Data/'
-#convert_d_to_mzml(PATH)
+#PATH = 'F:/Documents/MasterArbeit/QTOF_DATA/'
+#EXPORT_PATH = 'F:/Documents/MasterArbeit/ACLS_Masterarbeit/SideProject/Data/'
+PATH = 'C:/Users/wilv/Documents/Masterarbeit/QTOF-DATA/'
+EXPORT_PATH = 'C:/Users/wilv/Documents/Masterarbeit/ACLS_Masterarbeit/SideProject/Data/'
+# t1 = t.time()
+# convert_d_to_mzml(PATH)
+# t2 = t.time()
+# print(f"Time: {t2-t1} s")
+
+# Time to convert .D files to .mzML files: 400 s on WorkPC
+
+
 FILENAME = 'Larve_washed_02.mzML'
 # Beispiel: Verwende die Funktion
 #mzml_to_hdf5(PATH+"mzml/"+FILENAME, EXPORT_PATH+"daten.h5")
+
 
 # import mzML to Array
 t1 = t.time()
@@ -194,19 +230,8 @@ all_mz = get_all_unique_mz(imported)
 # take the first value
 print(round(round(list(all_mz)[0],2)-round(list(all_mz)[0],1),2))
 
-"""
-t1 = t.time()
-# Verwende die Funktion zum Laden der HDF5-Datei
-df = load_hdf5_to_dask(EXPORT_PATH+"daten.h5")
-t2 = t.time()
-print(f"Time: {t2-t1} s")
 
-t1 = t.time()
-# Verwende die Funktion zum Filtern der Daten
-df_filtered = mass_defect_filter(df, 2, 0.01)
-t2 = t.time()
-print(f"Time: {t2-t1} s")
 
-# Verwende die Funktion zum Plotten des Chromatogramms
-plot_chromatogram(df_filtered.compute())
-"""
+
+
+
