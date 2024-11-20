@@ -3,16 +3,19 @@ import os
 import numpy as np
 from io import BytesIO
 from copy import copy
+import matplotlib.pyplot as plt
 
 from . import master_class as mc
 from . import styles
 from .Warping import correlation_optimized_warping as COW
+from .styles_pyqtgraph import graph_style_chromatogram
 
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton,
                               QFileDialog, QLabel, QTextEdit,  
                               QGridLayout, QGroupBox, QSlider)
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt
+import pyqtgraph as pg
 
 from .ExternalGui import InputDialog, FileSelectionWindow, PCAWindow
 from .components import MyBar
@@ -158,7 +161,16 @@ class MainWindow(QWidget):
         PlotGroupBox = QGroupBox("Plots", objectName="Init")
         PlotLayout = QGridLayout()
 
+        # Plot Windows for the chromatograms with pyqtgraph
+        self.plot_graph_top = pg.PlotWidget()
+        graph_style_chromatogram(self.plot_graph_top)
+        PlotLayout.addWidget(self.plot_graph_top)
 
+        self.plot_graph_bottom = pg.PlotWidget()
+        graph_style_chromatogram(self.plot_graph_bottom)
+        PlotLayout.addWidget(self.plot_graph_bottom)
+
+        '''
         # Bildfelder in die zweite und dritte Reihe, zweite Spalte
         self.image_top = QLabel('Bildfeld 1', self)
         self.image_top.setPixmap(QPixmap())  # Bild kann später hinzugefügt werden
@@ -171,10 +183,10 @@ class MainWindow(QWidget):
         self.image_low.setStyleSheet("border: 1px solid black")
         self.image_low.setAlignment(Qt.AlignCenter)
         PlotLayout.addWidget(self.image_low)  # Zweite Bild in Zeile 5
-
+        '''
         PlotGroupBox.setLayout(PlotLayout)
         MainWindow.addWidget(PlotGroupBox)
-
+        
         # Layout-Anpassungen für die Spaltenbreite
         #MainWindow.setColumnStretch(0, 1)  # Buttons Spalte
         #MainWindow.setColumnStretch(1, 2)  # Textfeld und Bildfelder Spalte
@@ -304,12 +316,33 @@ class MainWindow(QWidget):
     
 
     def PlotWarpedChromatograms(self) -> None:
-        import matplotlib.pyplot as plt
 
+        
+        
         if not self.warped_chromatograms:
             self.print_to_output('No warped chromatograms to plot.')
             return
         rt = self.data_preparation.get_retention_time()
+        self.plot_graph_top.clear()
+        self.plot_graph_bottom.clear()
+        
+        self.plot_graph_top.plot(rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
+        for name, chromatogram in self.chromatograms.items():
+            if name in self.selected_target:
+                self.plot_graph_top.plot(rt, np.sum(chromatogram, axis=1))
+        self.plot_graph_top.setTitle('Unwarped Chromatograms')
+        self.plot_graph_top.setLabel('left', 'Intensity')
+        self.plot_graph_top.setLabel('bottom', 'Retention Time')
+
+        self.plot_graph_bottom.plot(rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
+        for _, chromatogram in self.warped_chromatograms.items():
+            self.plot_graph_bottom.plot(rt, np.sum(chromatogram, axis=1))
+        self.plot_graph_bottom.setTitle('Warped Chromatograms')
+        self.plot_graph_bottom.setLabel('left', 'Intensity')
+        self.plot_graph_bottom.setLabel('bottom', 'Retention Time')
+
+
+        '''
         def plot_chromatograms(chromatograms, title):
             fig, ax = plt.subplots(figsize=(10, 5))
             for _, chromatogram in chromatograms.items():
@@ -330,6 +363,7 @@ class MainWindow(QWidget):
 
         self.image_top.setPixmap(plot_chromatograms(self.chromatograms, 'Unwarped Chromatograms'))
         self.image_low.setPixmap(plot_chromatograms(self.warped_chromatograms, 'Warped Chromatograms'))
+        '''
 
         self.print_to_output('Chromatograms plotted.')
 
@@ -342,8 +376,8 @@ class MainWindow(QWidget):
 
 
 
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = MainWindow()
-    ex.show()
-    sys.exit(app.exec_())
+# if __name__ == '__main__':
+#     app = QApplication(sys.argv)
+#     ex = MainWindow()
+#     ex.show()
+#     sys.exit(app.exec_())
