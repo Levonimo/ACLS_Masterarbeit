@@ -1,7 +1,6 @@
 import sys
 import os
 import numpy as np
-from io import BytesIO
 from copy import copy
 import matplotlib.pyplot as plt
 
@@ -15,6 +14,7 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton,
                               QGridLayout, QGroupBox, QSlider)
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt
+
 import pyqtgraph as pg
 
 from .ExternalGui import InputDialog, FileSelectionWindow, PCAWindow
@@ -170,20 +170,7 @@ class MainWindow(QWidget):
         graph_style_chromatogram(self.plot_graph_bottom)
         PlotLayout.addWidget(self.plot_graph_bottom)
 
-        '''
-        # Bildfelder in die zweite und dritte Reihe, zweite Spalte
-        self.image_top = QLabel('Bildfeld 1', self)
-        self.image_top.setPixmap(QPixmap())  # Bild kann später hinzugefügt werden
-        self.image_top.setStyleSheet("border: 1px solid black")
-        self.image_top.setAlignment(Qt.AlignCenter)
-        PlotLayout.addWidget(self.image_top)  # Erste Bild in Zeile 4
-
-        self.image_low = QLabel('Bildfeld 2', self)
-        self.image_low.setPixmap(QPixmap())  # Bild kann später hinzugefügt werden
-        self.image_low.setStyleSheet("border: 1px solid black")
-        self.image_low.setAlignment(Qt.AlignCenter)
-        PlotLayout.addWidget(self.image_low)  # Zweite Bild in Zeile 5
-        '''
+        
         PlotGroupBox.setLayout(PlotLayout)
         MainWindow.addWidget(PlotGroupBox)
         
@@ -316,9 +303,6 @@ class MainWindow(QWidget):
     
 
     def PlotWarpedChromatograms(self) -> None:
-
-        
-        
         if not self.warped_chromatograms:
             self.print_to_output('No warped chromatograms to plot.')
             return
@@ -341,29 +325,6 @@ class MainWindow(QWidget):
         self.plot_graph_bottom.setLabel('left', 'Intensity')
         self.plot_graph_bottom.setLabel('bottom', 'Retention Time')
 
-
-        '''
-        def plot_chromatograms(chromatograms, title):
-            fig, ax = plt.subplots(figsize=(10, 5))
-            for _, chromatogram in chromatograms.items():
-                ax.plot(rt, chromatogram)
-                ax.set_title(title)
-                ax.set_xlabel('Retention Time')
-                ax.set_ylabel('Intensity')
-                ax.spines['right'].set_visible(False)
-                ax.spines['top'].set_visible(False)
-
-            buf = BytesIO()
-            fig.savefig(buf, format='png')
-            buf.seek(0)
-            pixmap = QPixmap()
-            pixmap.loadFromData(buf.getvalue())
-            plt.close(fig)
-            return pixmap
-
-        self.image_top.setPixmap(plot_chromatograms(self.chromatograms, 'Unwarped Chromatograms'))
-        self.image_low.setPixmap(plot_chromatograms(self.warped_chromatograms, 'Warped Chromatograms'))
-        '''
 
         self.print_to_output('Chromatograms plotted.')
 

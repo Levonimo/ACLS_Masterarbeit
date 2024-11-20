@@ -1,11 +1,11 @@
 import sys
 import os
 import numpy as np
-from io import BytesIO
 from copy import copy
 
 
 from . import styles
+from .styles_pyqtgraph import graph_style_chromatogram
 
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton,
                               QFileDialog, QLabel, QTextEdit,  
@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton,
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt
 
+import pyqtgraph as pg
 
 from .components import MyBar
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -106,18 +107,14 @@ class MainWindow(QWidget):
         PlotLayout = QGridLayout()
 
 
-        # Bildfelder in die zweite und dritte Reihe, zweite Spalte
-        self.image_top = QLabel('Bildfeld 1', self)
-        self.image_top.setPixmap(QPixmap())  # Bild kann später hinzugefügt werden
-        self.image_top.setStyleSheet("border: 1px solid black")
-        self.image_top.setAlignment(Qt.AlignCenter)
-        PlotLayout.addWidget(self.image_top)  # Erste Bild in Zeile 4
+        # Plot Windows for the chromatograms with pyqtgraph
+        self.plot_graph_top = pg.PlotWidget()
+        graph_style_chromatogram(self.plot_graph_top)
+        PlotLayout.addWidget(self.plot_graph_top)
 
-        self.image_low = QLabel('Bildfeld 2', self)
-        self.image_low.setPixmap(QPixmap())  # Bild kann später hinzugefügt werden
-        self.image_low.setStyleSheet("border: 1px solid black")
-        self.image_low.setAlignment(Qt.AlignCenter)
-        PlotLayout.addWidget(self.image_low)  # Zweite Bild in Zeile 5
+        self.plot_graph_bottom = pg.PlotWidget()
+        graph_style_chromatogram(self.plot_graph_bottom)
+        PlotLayout.addWidget(self.plot_graph_bottom)
 
         PlotGroupBox.setLayout(PlotLayout)
         MainWindow.addWidget(PlotGroupBox)
@@ -172,3 +169,30 @@ class MainWindow(QWidget):
                 self.selected_reference_file = copy(dialog.selected_file)
                 self.print_to_output(f'Reference file: {self.selected_reference_file}')
         self.btn_warp.setEnabled(True)
+
+
+    def PlotWarpedChromatograms(self) -> None:
+        if not self.warped_chromatograms:
+            self.print_to_output('No warped chromatograms to plot.')
+            return
+        rt = self.data_preparation.get_retention_time()
+        self.plot_graph_top.clear()
+        self.plot_graph_bottom.clear()
+        
+        self.plot_graph_top.plot(rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
+        for name, chromatogram in self.chromatograms.items():
+            if name in self.selected_target:
+                self.plot_graph_top.plot(rt, np.sum(chromatogram, axis=1))
+        self.plot_graph_top.setTitle('Unwarped Chromatograms')
+        self.plot_graph_top.setLabel('left', 'Intensity')
+        self.plot_graph_top.setLabel('bottom', 'Retention Time')
+
+        self.plot_graph_bottom.plot(rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
+        for _, chromatogram in self.warped_chromatograms.items():
+            self.plot_graph_bottom.plot(rt, np.sum(chromatogram, axis=1))
+        self.plot_graph_bottom.setTitle('Warped Chromatograms')
+        self.plot_graph_bottom.setLabel('left', 'Intensity')
+        self.plot_graph_bottom.setLabel('bottom', 'Retention Time')
+
+
+        self.print_to_output('Chromatograms plotted.')
