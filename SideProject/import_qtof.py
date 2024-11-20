@@ -84,36 +84,6 @@ def convert_d_to_mzml(path):
                 command = f"msconvert {os.path.join(path, file)} -o {mzml_path} --mzML --filter \"peakPicking true 1-\""
                 subprocess.run(command, shell=True, check=True)
 
-# Function that iterate over the dask dataframe and set all intensity values to zero were the mz values 
-# have a certain decimal place. It should work as a mass defect filter.
-# Possible inputs: dask dataframe, decimal place, mass defect threshold
-def mass_defect_filter(df, decimal_place, threshold):
-    def filter_row(row):
-        mz = row["mz"]
-        mass_defect = mz - round(mz, decimal_place)
-        if mass_defect < threshold:
-            row["intensity"] = 0
-        return row
-
-    return df.map_partitions(lambda df: df.apply(filter_row, axis=1))
-
-# Function that plots the filtered data with matplotlib as a chromatogram over the retention time
-def plot_chromatogram(df):
-    import matplotlib.pyplot as plt
-    # Group the data by the retention time
-    grouped = df.groupby("RT")
-    # Create a figure
-    plt.figure(figsize=(10, 6))
-    # Iterate over the groups
-    for name, group in grouped:
-        # Plot the retention time against the intensity
-        plt.plot(group["mz"], group["intensity"], label=f"RT: {name}")
-    # Add labels and a legend
-    plt.xlabel("m/z")
-    plt.ylabel("Intensity")
-    plt.legend()
-    # Show the plot
-    plt.show()
 
 def mzml_to_array(file_path):
     if not isinstance(file_path, str):
