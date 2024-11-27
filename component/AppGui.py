@@ -329,7 +329,7 @@ class MainWindow(QWidget):
         self.print_to_output('Chromatograms plotted.')
 
     def StatisticAnalyse(self) -> None:
-        dialog = PCAWindow(self.selected_target, self)
+        dialog = PCAWindow(self.selected_target,self.warped_chromatograms,self.chromatograms, self)
         if dialog.exec_():
             pass
 
