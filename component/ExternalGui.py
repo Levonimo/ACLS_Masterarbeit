@@ -1,5 +1,7 @@
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QListWidget, QCheckBox, QComboBox
 
+from .PCA import perform_pca
+
 
 class InputDialog(QDialog):
     def __init__(self, parent=None):
@@ -53,7 +55,7 @@ class FileSelectionWindow(QDialog):
 
 
 class PCAWindow(QDialog):
-    def __init__(self, file_names, parent=None):
+    def __init__(self, file_names, warped, unwarped, parent=None):
         super().__init__(parent)
         self.setWindowTitle('PCA Settings')
         self.setGeometry(200, 200, 300, 100)
@@ -91,7 +93,7 @@ class PCAWindow(QDialog):
         layout.addWidget(self.scaler_dropdown)
 
         # Add Dropdown menu to choose if Warped or Unwarped data should be used
-        self.label = QLabel('Data:', self)
+        self.label = QLabel('Data from:', self)
         layout.addWidget(self.label)
 
         self.data_dropdown = QComboBox(self)
@@ -119,7 +121,8 @@ class PCAWindow(QDialog):
         self.result = QLabel(self)
         layout.addWidget(self.result)
 
-        
+        self.warped_data = warped
+        self.unwarped_data = unwarped       
 
     def close(self):
         self.accept()
@@ -130,7 +133,24 @@ class PCAWindow(QDialog):
         self.selected_files = [file_name for file_name, checkbox in self.checkbox_dict.items() if checkbox.isChecked()]
         self.method = self.method_dropdown.currentText()
         self.scaler = self.scaler_dropdown.currentText()
-        self.data = self.data_dropdown.currentText()
+        self.data_from = self.data_dropdown.currentText()
+
+        # Load Warped or Unwarped data depending on the selectet filenames
+        if self.data_from == 'Warped':  
+            data = self.warped_data
+            selected_data = {key: data[key] for key in self.selected_files if key in data}
+        else:
+            data = self.unwarped_data
+            selected_data = {key: data[key] for key in self.selected_files if key in data}
+
+        n_components = int(self.input_text)
+        result = perform_pca(selected_data, n_components, self.scaler, self.method)
+
+        # Perform PCA with the given parameters, only the selected files
+        # should be used for the PCA
+
+
+
 
         # Perform PCA with the given parameters, only the selected files
         # should be used for the PCA

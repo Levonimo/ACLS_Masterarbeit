@@ -21,7 +21,7 @@ __email__       = "levinwilli@protonmail.ch"
 import os
 import sys
 
-# add betplip path to directory 
+# add Massdefectfilter path to directory 
 sys.path.insert(1, os.path.dirname(__file__))
 
 from component import MainWindow

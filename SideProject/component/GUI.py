@@ -20,15 +20,13 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 
 
-
-
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.chromatograms = dict()
         
         # Set window title and size
-        self.setWindowTitle('GC-MS Warping Tool')
+        self.setWindowTitle('GC-QTOF-MS Massdefect Filtering Tool')
         # Set the window icon
         app_icon = QIcon("images/Logo_ICBT_Analytik_round.ico")
         self.setWindowIcon(app_icon)
@@ -96,11 +94,20 @@ class MainWindow(QWidget):
         self.output_field = QTextEdit(self)
         self.output_field.setPlainText("Waiting for input...")
         self.output_field.setReadOnly(True)
+        #self.output_field.setFixedWidth(150)
         InputLayout.addWidget(self.output_field, 0, 1, 8, 1)  # Textfeld über 8 Zeilen
 
         InputGroupBox.setLayout(InputLayout)
+        InputGroupBox.setFixedWidth(450)
         InputGroupBox.setFixedHeight(250)
-        MainWindow.addWidget(InputGroupBox)
+        MainWindow.addWidget(InputGroupBox,0,0,1,1)
+
+        ParameterGroupBox = QGroupBox("Parameter", objectName="Init")
+        ParameterLayout = QGridLayout()
+
+        ParameterGroupBox.setLayout(ParameterLayout)
+        ParameterGroupBox.setFixedHeight(250)
+        MainWindow.addWidget(ParameterGroupBox,0,1,1,1)
 
 
         PlotGroupBox = QGroupBox("Plots", objectName="Init")
@@ -117,11 +124,9 @@ class MainWindow(QWidget):
         PlotLayout.addWidget(self.plot_graph_bottom)
 
         PlotGroupBox.setLayout(PlotLayout)
-        MainWindow.addWidget(PlotGroupBox)
+        MainWindow.addWidget(PlotGroupBox,1,0,1,2)
 
-        # Layout-Anpassungen für die Spaltenbreite
-        #MainWindow.setColumnStretch(0, 1)  # Buttons Spalte
-        #MainWindow.setColumnStretch(1, 2)  # Textfeld und Bildfelder Spalte
+        
 
 
         self.selected_folder = None

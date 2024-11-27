@@ -31,12 +31,6 @@ class DataPreparation:
         self.mzml_path = os.path.join(self.path, "mzml")
         os.makedirs(self.mzml_path, exist_ok=True)
 
-        self.msdial_path = os.path.join(self.path, "MSDIAL")
-        os.makedirs(self.msdial_path, exist_ok=True)
-
-        self.csv_path = os.path.join(self.path, "CSV")
-        os.makedirs(self.csv_path, exist_ok=True)
-
         self.mZ_totlist = np.round(np.arange(35, 400.1, 0.1), 1)
 
         self.convert_d_to_mzml()
@@ -46,7 +40,7 @@ class DataPreparation:
             if file.endswith(".D"):
                 mzml_file = os.path.join(self.mzml_path, file.replace(".D", ".mzML"))
                 if not os.path.exists(mzml_file):
-                    command = f"msconvert {os.path.join(self.path, file)} -o {self.mzml_path} --mzML"
+                    command = f"msconvert {os.path.join(self.path, file)} -o {self.mzml_path} --mzML --filter \"peakPicking true 1-\""
                     subprocess.run(command, shell=True, check=True)
 
     def get_file_names(self):
