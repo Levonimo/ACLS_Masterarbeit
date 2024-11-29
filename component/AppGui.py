@@ -70,7 +70,7 @@ class MainWindow(QWidget):
         InputLayout.addWidget(self.btn_show_files, 2, 0)
 
         self.btn_select_file = QPushButton('Select Reference File', self)
-        self.btn_select_file.clicked.connect(self.openFileSelectionWindow)
+        self.btn_select_file.clicked.connect(self.SelectionReferenceFile)
         self.btn_select_file.setEnabled(False)
         InputLayout.addWidget(self.btn_select_file, 3, 0)
 
@@ -217,13 +217,19 @@ class MainWindow(QWidget):
             for i in range(0, len(file_names), 4):
                 self.print_to_output(' | '.join(file_names[i:i + 4]))
 
-    def openFileSelectionWindow(self) -> None:
+    def SelectionReferenceFile(self) -> None:
         if self.data_preparation:
             file_names = self.data_preparation.get_file_names()
             dialog = FileSelectionWindow(file_names, self)
             if dialog.exec_():
                 self.selected_reference_file = copy(dialog.selected_file)
                 self.print_to_output(f'Reference file: {self.selected_reference_file}')
+                rt = self.data_preparation.get_retention_time()
+                self.plot_graph_top.clear()
+                self.plot_graph_top.plot(rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
+                self.plot_graph_top.setTitle('Unwarped Chromatograms')
+                self.plot_graph_top.setLabel('left', 'Intensity')
+                self.plot_graph_top.setLabel('bottom', 'Retention Time')
         self.btn_warp.setEnabled(True)
 
     def npy_import(self) -> None:
@@ -243,6 +249,8 @@ class MainWindow(QWidget):
                     else:
                         self.print_to_output(f'Chromatograms from {selected_Chromatograms} loaded.')
                         self.chromatograms = self.data_preparation.get_list_of_chromatograms(selected_Chromatograms)
+                
+                    
             else:
                 input_dialog = InputDialog(self)
                 if input_dialog.exec_():
@@ -256,7 +264,9 @@ class MainWindow(QWidget):
     def PerformeWarping(self) -> None:
         file_names = self.data_preparation.get_file_names()
         self.selected_target = None
-        file_names.append('All')
+        # add 'All' at the beginning to the list of file names
+        file_names.insert(0, 'All')
+
         dialog = FileSelectionWindow(file_names, self)
         if dialog.exec_():
             self.selected_target = dialog.selected_file
@@ -272,7 +282,7 @@ class MainWindow(QWidget):
 
 
         if self.selected_reference_file and self.selected_target:
-            reference = self.data_preparation.get_chromatogram(self.selected_reference_file)
+            reference = self.chromatograms[self.selected_reference_file]
             self.warped_chromatograms = {}
             self.warp_paths = {}
             self.similarity_scores = {}
@@ -280,7 +290,7 @@ class MainWindow(QWidget):
                 self.selected_target = [self.selected_target]
             for target_file in self.selected_target:
                 if target_file != self.selected_reference_file:
-                    target = self.data_preparation.get_chromatogram(target_file)
+                    target = self.chromatograms[target_file]
                     warped_target, warp_path, score = COW(reference_2D = reference, target_2D = target, slack=slack, segments=segment_length)
                     self.warped_chromatograms[target_file] = warped_target
                     self.warp_paths[target_file] = warp_path
@@ -297,7 +307,11 @@ class MainWindow(QWidget):
 
         self.btn_plot.setEnabled(True)
         self.btn_analyse.setEnabled(True)
-
+        '''
+        np.save('./Outputs/warped_chromatograms.npy', self.warped_chromatograms)
+        np.save('./Outputs/unwarped_chromatograms.npy', self.chromatograms)
+        np.save('./Outputs/selected_target.npy', self.selected_target)
+        '''
     
     # Plotting the chromatograms all unwarped chromatograms in the top image and all warped chromatograms in the lower image
     
@@ -331,8 +345,19 @@ class MainWindow(QWidget):
     def StatisticAnalyse(self) -> None:
         dialog = PCAWindow(self.selected_target,self.warped_chromatograms,self.chromatograms, self)
         if dialog.exec_():
-            pass
-
+            results = dialog.results
+            self.print_to_output('PCA finished.')
+            
+            #plot the loadings in bottom plot
+            self.plot_graph_bottom.clear()
+            rt = self.data_preparation.get_retention_time()
+            # if ddimension of loadings is more than 1, sum it up
+            if len(results['loadings']) > 1:
+                self.plot_graph_bottom.plot(rt , np.sum(results['loadings'], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
+            else:
+                self.plot_graph_bottom.plot(rt , results['loadings'][0], pen=pg.mkPen(color=(0, 0, 0)))
+            self.plot_graph_bottom.setLabel('left', 'Intensity')
+            self.plot_graph_bottom.setLabel('bottom', 'Retention Time')
         
 
 
