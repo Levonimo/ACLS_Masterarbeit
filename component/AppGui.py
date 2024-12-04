@@ -204,7 +204,10 @@ class MainWindow(QWidget):
             if self.chromatograms:
                 self.btn_show_files.setEnabled(True)
                 self.btn_select_file.setEnabled(True)
-                
+
+            self.rt = self.data_preparation.get_retention_time()
+            np.save('./Outputs/retention_time.npy', self.rt)
+          
 
 
     def print_to_output(self, text: str) -> None:
@@ -224,9 +227,8 @@ class MainWindow(QWidget):
             if dialog.exec_():
                 self.selected_reference_file = copy(dialog.selected_file)
                 self.print_to_output(f'Reference file: {self.selected_reference_file}')
-                rt = self.data_preparation.get_retention_time()
                 self.plot_graph_top.clear()
-                self.plot_graph_top.plot(rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
+                self.plot_graph_top.plot(self.rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
                 self.plot_graph_top.setTitle('Unwarped Chromatograms')
                 self.plot_graph_top.setLabel('left', 'Intensity')
                 self.plot_graph_top.setLabel('bottom', 'Retention Time')
@@ -307,11 +309,11 @@ class MainWindow(QWidget):
 
         self.btn_plot.setEnabled(True)
         self.btn_analyse.setEnabled(True)
-        '''
-        np.save('./Outputs/warped_chromatograms.npy', self.warped_chromatograms)
-        np.save('./Outputs/unwarped_chromatograms.npy', self.chromatograms)
-        np.save('./Outputs/selected_target.npy', self.selected_target)
-        '''
+        
+        # np.save('./Outputs/warped_chromatograms.npy', self.warped_chromatograms)
+        # np.save('./Outputs/unwarped_chromatograms.npy', self.chromatograms)
+        # np.save('./Outputs/selected_target.npy', self.selected_target)
+        
     
     # Plotting the chromatograms all unwarped chromatograms in the top image and all warped chromatograms in the lower image
     
@@ -320,21 +322,21 @@ class MainWindow(QWidget):
         if not self.warped_chromatograms:
             self.print_to_output('No warped chromatograms to plot.')
             return
-        rt = self.data_preparation.get_retention_time()
+        
         self.plot_graph_top.clear()
         self.plot_graph_bottom.clear()
         
-        self.plot_graph_top.plot(rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
+        self.plot_graph_top.plot(self.rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
         for name, chromatogram in self.chromatograms.items():
             if name in self.selected_target:
-                self.plot_graph_top.plot(rt, np.sum(chromatogram, axis=1))
+                self.plot_graph_top.plot(self.rt, np.sum(chromatogram, axis=1))
         self.plot_graph_top.setTitle('Unwarped Chromatograms')
         self.plot_graph_top.setLabel('left', 'Intensity')
         self.plot_graph_top.setLabel('bottom', 'Retention Time')
 
-        self.plot_graph_bottom.plot(rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
+        self.plot_graph_bottom.plot(self.rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
         for _, chromatogram in self.warped_chromatograms.items():
-            self.plot_graph_bottom.plot(rt, np.sum(chromatogram, axis=1))
+            self.plot_graph_bottom.plot(self.rt, np.sum(chromatogram, axis=1))
         self.plot_graph_bottom.setTitle('Warped Chromatograms')
         self.plot_graph_bottom.setLabel('left', 'Intensity')
         self.plot_graph_bottom.setLabel('bottom', 'Retention Time')
@@ -350,12 +352,11 @@ class MainWindow(QWidget):
             
             #plot the loadings in bottom plot
             self.plot_graph_bottom.clear()
-            rt = self.data_preparation.get_retention_time()
             # if ddimension of loadings is more than 1, sum it up
             if len(results['loadings']) > 1:
-                self.plot_graph_bottom.plot(rt , np.sum(results['loadings'], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
+                self.plot_graph_bottom.plot(self.rt , np.sum(results['loadings'], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
             else:
-                self.plot_graph_bottom.plot(rt , results['loadings'][0], pen=pg.mkPen(color=(0, 0, 0)))
+                self.plot_graph_bottom.plot(self.rt , results['loadings'][0], pen=pg.mkPen(color=(0, 0, 0)))
             self.plot_graph_bottom.setLabel('left', 'Intensity')
             self.plot_graph_bottom.setLabel('bottom', 'Retention Time')
         
