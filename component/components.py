@@ -2,7 +2,9 @@
 Components of the Graphical user interface
     (Personalized PyQt objects)
 
-adapted from David Patsch's AlphaDock
+adapted from David Patsch's AlphaDock and Nicola Imstepf's Master Thesis 
+- RightPushButton
+- MyBar
 
 components.py
 """
@@ -11,17 +13,37 @@ from . import styles, config
 
 import webbrowser
 
-from PyQt5.QtWidgets import (QHBoxLayout, QPushButton, QWidget, 
-                             QLayout, QMenu, QAction, QCheckBox, QLineEdit, 
-                             QWidgetAction)
-from PyQt5.QtCore import Qt, QPoint, QEvent, QSize
-from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import (QHBoxLayout, QPushButton, QWidget, QLayout, 
+                             QMenu, QAction,  QComboBox)
+from PyQt5.QtCore import Qt, QPoint, QEvent
+from PyQt5.QtGui import QIcon, QStandardItemModel
 
 from functools import partial
 import re
 
+#=========================================================================================================
 
+class CheckableComboBox(QComboBox): 
+    def __init__(self, action, parent=None): 
+        super(CheckableComboBox, self).__init__(parent) 
+        self.view().pressed.connect(self.handleItemPressed) 
+        self.setModel(QStandardItemModel(self)) 
+        self.action = action
 
+    def addItems(self, items):
+        for item in items:
+            self.addItem(item)
+            item = self.model().item(self.count() - 1)
+            item.setCheckState(Qt.Unchecked)
+
+    def handleItemPressed(self, index): 
+        item = self.model().itemFromIndex(index) 
+        if item.checkState() == Qt.Checked: 
+            item.setCheckState(Qt.Unchecked) 
+        else: 
+            item.setCheckState(Qt.Checked)
+        self.action.trigger(item.text(), item.checkState() == Qt.Checked)
+#=========================================================================================================
 class RightPushButton(QPushButton):
     """
     QPushbutton with additional function on right click
@@ -36,7 +58,7 @@ class RightPushButton(QPushButton):
         if QMouseEvent.button() == Qt.RightButton:
             self.parent.parent.rightClickedEvent()
        
-        
+#=========================================================================================================       
 class MyBar(QWidget):
     """QWidget to replace the removed title bar and buttons"""
 

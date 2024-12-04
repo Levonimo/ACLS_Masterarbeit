@@ -35,40 +35,46 @@ def get_method(method_name):
 
 # =========================================================================================================
 # Perform PCA on the data
-def perform_pca(data, n_components, scaler_name, method_name):
+def perform_pca(data: dict, n_components: int, scaler_name: str, method_name: str, chrom_dim: str) -> tuple:
     # check if data is not empty
     if data is None:
         return None
-
+    
     # check if data is dictionary
     if isinstance(data, dict):
         # make a list of lists from the dictionary
-        if scaler_name == 'None':
+        if chrom_dim == '3D':
             data_points = list(data.values())
             flat_points = []
-            original_shapes = []
+            original_shapes = np.array(data_points[0]).shape
             for i in range(len(data_points)):
-                original_shapes.append(data_points[i].shape)
                 flat_points.append(data_points[i].flatten())
             data_points = flat_points
-        else:
+
+        elif chrom_dim == '2D':
             # if scaler not none, import each value and sum it up in axis 1
             data_points = [np.sum(list(data[key]), axis=1) for key in data.keys()]
+            
+        if scaler_name != 'None':
             scaler = get_scaler(scaler_name)
-            data_points = scaler.fit_transform(data_points)
-        
-        points_names = list(data.keys())
-
+            data_points = scaler.fit_transform(data_points) 
+    
     # Perform PCA
     pca = PCA(n_components=n_components, svd_solver=get_method(method_name))
     pca.fit(data_points)
 
     # Loadings
     loadings = pca.components_
+    
 
-    if scaler_name == 'None':
+    
+    if chrom_dim == '3D':
+        loadings_dict = {}
+        for i in range(len(loadings)):
+            loadings_dict[i] = loadings[i].reshape(original_shapes)
         # reshape loadings to the original shape
-        loadings = [loadings[i].reshape(original_shapes[i]) for i in range(len(data_points))]
+        loadings = loadings_dict
+        
 
     scores = pca.transform(data_points)
 

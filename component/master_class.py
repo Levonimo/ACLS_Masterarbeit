@@ -3,13 +3,9 @@ import subprocess
 import numpy as np
 import pandas as pd
 import pyopenms as oms
-import copy as cp
-import math
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import LinearRegression
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-import matplotlib.pyplot as plt
+
+
+
 
 
 
@@ -129,73 +125,73 @@ class DataPreparation:
 
 
 
-    def plot_chromatogram(self, name):
-        if not isinstance(name, str) and not isinstance(name, list):
-            raise TypeError("name must be a string or a list of strings.")
-        if isinstance(name, list) and not all(isinstance(i, str) for i in name):
-            raise TypeError("All elements in the list must be strings.")
+    # def plot_chromatogram(self, name):
+    #     if not isinstance(name, str) and not isinstance(name, list):
+    #         raise TypeError("name must be a string or a list of strings.")
+    #     if isinstance(name, list) and not all(isinstance(i, str) for i in name):
+    #         raise TypeError("All elements in the list must be strings.")
 
-        rt = self.get_retention_time()
-        if isinstance(name, list):
-            for i in name:
-                plt.figure(figsize=(12, 5))
-                plt.plot(rt, np.sum(self.chromatograms[i], axis=1))
-                plt.xlabel('Retention Time')
-                plt.ylabel('Intensity')
-                plt.gca().spines['right'].set_visible(False)
-                plt.gca().spines['top'].set_visible(False)
-                plt.show()
-        elif isinstance(name, str):
-            plt.figure(figsize=(12, 5))
-            plt.plot(rt, np.sum(self.chromatograms[name], axis=1))
-            plt.xlabel('Retention Time')
-            plt.ylabel('Intensity')
-            plt.gca().spines['right'].set_visible(False)
-            plt.gca().spines['top'].set_visible(False)
-            plt.show()
+    #     rt = self.get_retention_time()
+    #     if isinstance(name, list):
+    #         for i in name:
+    #             plt.figure(figsize=(12, 5))
+    #             plt.plot(rt, np.sum(self.chromatograms[i], axis=1))
+    #             plt.xlabel('Retention Time')
+    #             plt.ylabel('Intensity')
+    #             plt.gca().spines['right'].set_visible(False)
+    #             plt.gca().spines['top'].set_visible(False)
+    #             plt.show()
+    #     elif isinstance(name, str):
+    #         plt.figure(figsize=(12, 5))
+    #         plt.plot(rt, np.sum(self.chromatograms[name], axis=1))
+    #         plt.xlabel('Retention Time')
+    #         plt.ylabel('Intensity')
+    #         plt.gca().spines['right'].set_visible(False)
+    #         plt.gca().spines['top'].set_visible(False)
+    #         plt.show()
+    
+    # def parse_msp_alignment_compounds(self, msp_file_path):
+    #     if not isinstance(msp_file_path, str):
+    #         raise TypeError("msp_file_path must be a string.")
+    #     if not os.path.isfile(msp_file_path):
+    #         raise ValueError("msp_file_path must be a valid file path.")
 
-    def parse_msp_alignment_compounds(self, msp_file_path):
-        if not isinstance(msp_file_path, str):
-            raise TypeError("msp_file_path must be a string.")
-        if not os.path.isfile(msp_file_path):
-            raise ValueError("msp_file_path must be a valid file path.")
+    #     self.alignment_compound_list = {}
+    #     with open(msp_file_path, 'r') as file:
+    #         spectra = []
+    #         name = None
+    #         for line in file:
+    #             line = line.strip()
+    #             if not line and name:
+    #                 self.alignment_compound_list[name] = spectra
+    #                 spectra = []
+    #             elif line.startswith("Name:"):
+    #                 name = line.split(": ", 1)[1]
+    #             elif line.startswith("Num Peaks:"):
+    #                 spectra = []
+    #             elif name and spectra is not None:
+    #                 mz_int_pair = [float(x) for x in line.split() if x]
+    #                 spectra.append(mz_int_pair)
 
-        self.alignment_compound_list = {}
-        with open(msp_file_path, 'r') as file:
-            spectra = []
-            name = None
-            for line in file:
-                line = line.strip()
-                if not line and name:
-                    self.alignment_compound_list[name] = spectra
-                    spectra = []
-                elif line.startswith("Name:"):
-                    name = line.split(": ", 1)[1]
-                elif line.startswith("Num Peaks:"):
-                    spectra = []
-                elif name and spectra is not None:
-                    mz_int_pair = [float(x) for x in line.split() if x]
-                    spectra.append(mz_int_pair)
+    #     mz_compressed = np.arange(20, 401, 1)
 
-        mz_compressed = np.arange(20, 401, 1)
+    #     for name, spectra in self.alignment_compound_list.items():
+    #         data_dict = {int(mz): intensity for mz, intensity in spectra}
+    #         intensity_list = [data_dict.get(mz, 0) for mz in mz_compressed]
+    #         self.alignment_compound_list[name] = np.array(intensity_list)
 
-        for name, spectra in self.alignment_compound_list.items():
-            data_dict = {int(mz): intensity for mz, intensity in spectra}
-            intensity_list = [data_dict.get(mz, 0) for mz in mz_compressed]
-            self.alignment_compound_list[name] = np.array(intensity_list)
+    # def get_alignment_compound_list(self):
+    #     return self.alignment_compound_list
 
-    def get_alignment_compound_list(self):
-        return self.alignment_compound_list
+    # def normalize_chromatogram(self, chromatogram):
+    #     if not isinstance(chromatogram, np.ndarray):
+    #         raise TypeError("chromatogram must be a numpy array.")
+    #     if chromatogram.ndim != 2:
+    #         raise ValueError("chromatogram must be a 2D numpy array.")
 
-    def normalize_chromatogram(self, chromatogram):
-        if not isinstance(chromatogram, np.ndarray):
-            raise TypeError("chromatogram must be a numpy array.")
-        if chromatogram.ndim != 2:
-            raise ValueError("chromatogram must be a 2D numpy array.")
-
-        norm_factor = np.sum(chromatogram, axis=1)
-        norm_factor[norm_factor == 0] = 1  # Avoid division by zero
-        return chromatogram / norm_factor[:, None]
+    #     norm_factor = np.sum(chromatogram, axis=1)
+    #     norm_factor[norm_factor == 0] = 1  # Avoid division by zero
+    #     return chromatogram / norm_factor[:, None]
     
     def compression_of_spectra(self, chromatogram):
         '''
@@ -213,80 +209,80 @@ class DataPreparation:
         compressed_chroma = np.transpose(compressed_chroma)
 
         return compressed_chroma
-
-    def perform_pca(self,chromatograms, n_components=10):
-        """
-        Führt eine Principal Component Analysis (PCA) auf einer Matrix von Gaschromatogrammen durch.
-
-        Parameters:
-        chromatograms (np.array): Die Eingabematrix von Gaschromatogrammen.
-        n_components (int): Die Anzahl der Hauptkomponenten, die extrahiert werden sollen.
-
-        Returns:
-        Tuple: Tuple mit den folgenden Werten:
-            - pca (PCA-Objekt): Das PCA-Objekt, das die Hauptkomponenten enthält.
-            - scores (np.array): Die Scores der Daten in den neuen Hauptkomponenten.
-            - loadings (np.array): Die Loadings (Ladungen) der Variablen.
-            - explained_variance_ratio (np.array): Der Anteil der Varianz, die durch jede Hauptkomponente erklärt wird.
-        """
-        chromatograms = np.array([chromatograms[key] for key in chromatograms.keys()])
-        # Standardisierung der Daten
-        scaler = StandardScaler()
-        chromatograms_std = scaler.fit_transform(chromatograms)
-
-        # PCA durchführen
-        pca = PCA(n_components=n_components)
-        scores = pca.fit_transform(chromatograms_std)
-
-        # Ladungen (Loadings) sind die Koeffizienten der linearen Kombinationen der ursprünglichen Variablen
-        loadings = pca.components_.T
-
-        # Anteil der erklärten Varianz
-        explained_variance_ratio = pca.explained_variance_ratio_
-
-        return pca, scores, loadings, explained_variance_ratio
-
-    def PCA(self, Chromatograms):
-        Chromatograms = np.array([Chromatograms[key] for key in Chromatograms.keys()])
-        Chromatograms = Chromatograms.T
-        #Chromatograms = Chromatograms - np.mean(Chromatograms, axis = 0)
-        covariance_matrix = np.cov(Chromatograms.T)
-        eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
-        idx = np.argsort(eigenvalues)[::-1]
-        eigenvalues = eigenvalues[idx]
-        eigenvectors = eigenvectors[:, idx]
-        # Calculate Loadings and Scores
-        scores = np.dot(Chromatograms, eigenvectors)
-        loadings = np.dot(scores, eigenvectors.T)
-        return scores, loadings, eigenvalues, eigenvectors
     
-    def write_array_to_mzml(self, array, output_file):
-        # Check if folder "Warped_mzml" exists, if not create it
-        # Create an MSExperiment object
-        exp = oms.MSExperiment()
+    # def perform_pca(self,chromatograms, n_components=10):
+    #     """
+    #     Führt eine Principal Component Analysis (PCA) auf einer Matrix von Gaschromatogrammen durch.
 
-        # Define the m/z values (y-axis) and RT values (x-axis)
-        mz_values = self.mZ_totlist
-        rt_values = self.get_retention_time()
+    #     Parameters:
+    #     chromatograms (np.array): Die Eingabematrix von Gaschromatogrammen.
+    #     n_components (int): Die Anzahl der Hauptkomponenten, die extrahiert werden sollen.
 
-        # Iterate over the RT values (x-axis)
-        for rt_index, rt in enumerate(rt_values):
-            # Create a new MSSpectrum object for each RT
-            spectrum = oms.MSSpectrum()
-            spectrum.setRT(rt)
+    #     Returns:
+    #     Tuple: Tuple mit den folgenden Werten:
+    #         - pca (PCA-Objekt): Das PCA-Objekt, das die Hauptkomponenten enthält.
+    #         - scores (np.array): Die Scores der Daten in den neuen Hauptkomponenten.
+    #         - loadings (np.array): Die Loadings (Ladungen) der Variablen.
+    #         - explained_variance_ratio (np.array): Der Anteil der Varianz, die durch jede Hauptkomponente erklärt wird.
+    #     """
+    #     chromatograms = np.array([chromatograms[key] for key in chromatograms.keys()])
+    #     # Standardisierung der Daten
+    #     scaler = StandardScaler()
+    #     chromatograms_std = scaler.fit_transform(chromatograms)
 
-            # Iterate over the m/z values (y-axis)
-            for mz_index, mz in enumerate(mz_values):
-                intensity = array[rt_index, mz_index]
-                if intensity > 0:  # Only add peaks with non-zero intensity
-                    peak = oms.Peak1D()
-                    peak.setMZ(mz)
-                    peak.setIntensity(intensity)
-                    spectrum.push_back(peak)
+    #     # PCA durchführen
+    #     pca = PCA(n_components=n_components)
+    #     scores = pca.fit_transform(chromatograms_std)
 
-            # Add the spectrum to the experiment
-            exp.addSpectrum(spectrum)
+    #     # Ladungen (Loadings) sind die Koeffizienten der linearen Kombinationen der ursprünglichen Variablen
+    #     loadings = pca.components_.T
 
-        # Write the experiment to an mzML file
-        oms.MzMLFile().store(output_file, exp)
+    #     # Anteil der erklärten Varianz
+    #     explained_variance_ratio = pca.explained_variance_ratio_
 
+    #     return pca, scores, loadings, explained_variance_ratio
+
+    # def PCA(self, Chromatograms):
+    #     Chromatograms = np.array([Chromatograms[key] for key in Chromatograms.keys()])
+    #     Chromatograms = Chromatograms.T
+    #     #Chromatograms = Chromatograms - np.mean(Chromatograms, axis = 0)
+    #     covariance_matrix = np.cov(Chromatograms.T)
+    #     eigenvalues, eigenvectors = np.linalg.eig(covariance_matrix)
+    #     idx = np.argsort(eigenvalues)[::-1]
+    #     eigenvalues = eigenvalues[idx]
+    #     eigenvectors = eigenvectors[:, idx]
+    #     # Calculate Loadings and Scores
+    #     scores = np.dot(Chromatograms, eigenvectors)
+    #     loadings = np.dot(scores, eigenvectors.T)
+    #     return scores, loadings, eigenvalues, eigenvectors
+    
+    # def write_array_to_mzml(self, array, output_file):
+    #     # Check if folder "Warped_mzml" exists, if not create it
+    #     # Create an MSExperiment object
+    #     exp = oms.MSExperiment()
+
+    #     # Define the m/z values (y-axis) and RT values (x-axis)
+    #     mz_values = self.mZ_totlist
+    #     rt_values = self.get_retention_time()
+
+    #     # Iterate over the RT values (x-axis)
+    #     for rt_index, rt in enumerate(rt_values):
+    #         # Create a new MSSpectrum object for each RT
+    #         spectrum = oms.MSSpectrum()
+    #         spectrum.setRT(rt)
+
+    #         # Iterate over the m/z values (y-axis)
+    #         for mz_index, mz in enumerate(mz_values):
+    #             intensity = array[rt_index, mz_index]
+    #             if intensity > 0:  # Only add peaks with non-zero intensity
+    #                 peak = oms.Peak1D()
+    #                 peak.setMZ(mz)
+    #                 peak.setIntensity(intensity)
+    #                 spectrum.push_back(peak)
+
+    #         # Add the spectrum to the experiment
+    #         exp.addSpectrum(spectrum)
+
+    #     # Write the experiment to an mzML file
+    #     oms.MzMLFile().store(output_file, exp)
+    
