@@ -13,25 +13,16 @@ import numpy as np
 
 # =========================================================================================================
 # Input Dialog
+# =========================================================================================================
 
 class InputDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle('New File-Name')
         self.setGeometry(200, 200, 300, 100)
 
         # Calculate the center position of the parent window
-        if parent:
-            parent_geometry = parent.geometry()
-            parent_center_x = parent_geometry.x() + parent_geometry.width() // 2
-            parent_center_y = parent_geometry.y() + parent_geometry.height() // 2
-            
-            # Get the screen geometry of the monitor where the parent window is located
-            screen = QDesktopWidget().screenGeometry(parent)
-            
-            # Move the new window to the center of the parent window within the screen
-            self.move(screen.x() + parent_center_x - self.width() // 2, 
-                      screen.y() + parent_center_y - self.height() // 2)
+        
         
         layout = QVBoxLayout()
 
@@ -55,9 +46,10 @@ class InputDialog(QDialog):
 
 # =========================================================================================================
 # File Selection Window
+# =========================================================================================================
 
 class FileSelectionWindow(QDialog):
-    def __init__(self, file_names, parent=None):
+    def __init__(self, file_names, parent):
         super().__init__(parent)
         self.setWindowTitle('Select a File')
         self.setGeometry(150, 150, 400, 300)
@@ -83,6 +75,7 @@ class FileSelectionWindow(QDialog):
 
 # =========================================================================================================
 # Warping Selection Window
+# =========================================================================================================
 '''
 To do:
     - Make a Windowfor File Selection with checkboxes
@@ -90,7 +83,92 @@ To do:
 '''
 
 # =========================================================================================================
+# Crossref File Selection Window
+# =========================================================================================================
+
+class CrossrefFileSelectionWindow(QDialog):
+    def __init__(self, file_names, parent):
+        super().__init__(parent)
+        self.setWindowTitle('Select a File')
+        self.setGeometry(150, 150, 400, 300)
+
+        layout = QVBoxLayout()
+
+        
+        fileGroupbox = QGroupBox('Select files', self)
+        fileGroupboxLayout = QGridLayout(fileGroupbox) 
+        self.checkbox_dict = {}
+       
+        for index, file_name in enumerate(file_names):
+            checkbox = QCheckBox(file_name, self)
+            row = index % 10
+            col = index // 10
+            fileGroupboxLayout.addWidget(checkbox, row, col)
+            self.checkbox_dict[file_name] = checkbox
+
+        # add a new column for checkboxes and dropdown menu with groupboxes
+
+        # button to select all files at once
+        self.select_all_button = QPushButton('Select all', self)
+        fileGroupboxLayout.addWidget(self.select_all_button, 0, col+1, 1, 1)
+        self.select_all_button.clicked.connect(self.select_all)
+
+        # button to deselect all files at once
+        self.deselect_all_button = QPushButton('Deselect all', self)
+        fileGroupboxLayout.addWidget(self.deselect_all_button, 1, col+1, 1, 1)
+        self.deselect_all_button.clicked.connect(self.deselect_all)
+
+        # Dropdwoen menu for group selection with 
+        Groups, filename_parts = GroupMaker(file_names)
+        
+        for i, key in enumerate(Groups.keys()):
+            Groups[key] = sorted(Groups[key])
+            group_dropdown = CheckableComboBox(self.checkbox_action(self, key, filename_parts), self)
+            group_dropdown.addItems(Groups[key])
+            fileGroupboxLayout.addWidget(group_dropdown, 2+i, col+1, 1, 1)
+
+        
+        self.select_button = QPushButton('Select')
+        self.select_button.clicked.connect(self.select_file)
+        fileGroupboxLayout.addWidget(self.select_button, 9, col+1, 1, 1)
+
+        fileGroupbox.setLayout(fileGroupboxLayout)
+        layout.addWidget(fileGroupbox, 0, 0, 1, 1)
+
+
+
+
+    def select_file(self):
+        selected_files = [file_name for file_name, checkbox in self.checkbox_dict.items() if checkbox.isChecked()]
+        self.selected_files = selected_files
+        self.accept()
+
+    # Functions for the checkboxes
+    def select_all(self):
+        for checkbox in self.checkbox_dict.values():
+            checkbox.setChecked(True)
+
+    def deselect_all(self):
+        for checkbox in self.checkbox_dict.values():
+            checkbox.setChecked(False)
+    
+    class checkbox_action:
+        def __init__(self, parent, group_index, filename_parts) -> None:
+            self.parent = parent
+            self.group_index = group_index
+            self.filename_parts = filename_parts
+
+        def trigger(self, item_text, checked):
+            for file_name, parts in self.filename_parts.items():
+                if parts[self.group_index] == item_text:
+                    self.parent.checkbox_dict[file_name].setChecked(checked)
+
+
+
+
+# =========================================================================================================
 # PCA Window
+# =========================================================================================================
 
 class PCAWindow(QDialog):
     def __init__(self, file_names: list, warped: dict, unwarped: dict, parent=None) -> None:
@@ -242,13 +320,13 @@ class PCAWindow(QDialog):
         self.number_PC = self.input_number_PC.text()
 
         # add elements for score plot
-        self.label = QLabel('Select components for X-Axis:', self)
+        self.label = QLabel('Component for X-Axis:', self)
         ResultLayout.addWidget(self.label, 0, 0, 1, 1)
         self.score_xaxis_dropdown = QComboBox(self)
         self.score_xaxis_dropdown.addItems([f'Component {i+1}' for i in range(int(self.number_PC))])
         ResultLayout.addWidget(self.score_xaxis_dropdown, 0, 1, 1, 1)
 
-        self.label = QLabel('Select components for Y-Axis:', self)
+        self.label = QLabel('Component for Y-Axis:', self)
         ResultLayout.addWidget(self.label, 1, 0, 1, 1)
         self.score_yaxis_dropdown = QComboBox(self)
         self.score_yaxis_dropdown.addItems([f'Component {i+1}' for i in range(int(self.number_PC))])
@@ -269,6 +347,12 @@ class PCAWindow(QDialog):
         self.loadings_button = QPushButton('Display Loadings', self)
         ResultLayout.addWidget(self.loadings_button, 5, 1, 1, 1)
         self.loadings_button.clicked.connect(self.display_loadings)
+
+
+        #### Test selection of files for crossref
+        self.crossref_button = QPushButton('Crossref Files', self)
+        ResultLayout.addWidget(self.crossref_button, 6, 1, 1, 1)
+        self.crossref_button.clicked.connect(self.crossref_files)
 
 
 
@@ -401,13 +485,24 @@ class PCAWindow(QDialog):
         # The result should be a scatter plot of the first two components
         # of the PCA, colored by the file name endings 
         self.plot_graph_left.clear()
-        
+        self.plot_graph_left.enableAutoRange()        
         for i, sample in enumerate(self.selected_files):
             color = self.colors[sample[-3:]]
             self.plot_graph_left.plot([scores[i, 0]], [scores[i, 1]], pen=None, symbol='o', symbolBrush=color)
 
         self.plot_graph_left.setLabel('bottom', 'Component 1')
         self.plot_graph_left.setLabel('left', 'Component 2')
+
+         # get all unique file endings
+        unique_endings = list(set([file_name[-3:] for file_name in self.selected_files]))
+        # add legend of all unique file endings
+        legend = self.plot_graph_left.addLegend()
+        # clear legend
+        legend.clear()
+        legend.setOffset((10, 10))  # Adjust the position of the legend if needed
+
+        for ending in unique_endings:
+            legend.addItem(pg.ScatterPlotItem(pen=None, brush=self.colors[ending], size=10), f'{ending}')
 
         # Plot the explained variance as Barplot
         self.plot_graph_right.clear()
@@ -418,12 +513,7 @@ class PCAWindow(QDialog):
         self.plot_graph_right.setLabel('left', 'Explained Variance')
         self.plot_graph_right.setLabel('bottom', 'Component')
         
-        # get all unique file endings
-        unique_endings = list(set([file_name[-3:] for file_name in self.selected_files]))
-        # add legend of all unique file endings
-        for i, ending in enumerate(unique_endings):
-            self.plot_graph_left.addLegend(label=f'{ending}', brush=self.colors[ending])
-
+       
               
 
 
@@ -475,18 +565,26 @@ class PCAWindow(QDialog):
         # get all unique file endings
         unique_endings = list(set([file_name[-3:] for file_name in self.selected_files]))
         # add legend of all unique file endings
-        for i, ending in enumerate(unique_endings):
-            self.plot_graph_left.addLegend(label=f'{ending}', brush=self.colors[ending])
+        legend = self.plot_graph_left.addLegend()
+        legend.clear()
+        legend.setOffset((10, 10))  # Adjust the position of the legend if needed
+
+        for ending in unique_endings:
+            legend.addItem(pg.ScatterPlotItem(pen=None, brush=self.colors[ending], size=10), f'{ending}')
+
+
+    def crossref_files(self):
+        # get all unchecked files
+        unchecked_files = [file_name for file_name, checkbox in self.checkbox_dict.items() if not checkbox.isChecked()]
+
+        crossref_window = CrossrefFileSelectionWindow(unchecked_files, self)
+        if crossref_window.exec_():
+            crossref_files = crossref_window.selected_files
+
+            # calculate score for the selected files with the current loadings
+            # add them to the score plot with label 'ref'
+            for file in crossref_files:
+                color = self.colors[file[-3:]]
+                score = np.dot(self.results['loadings'], self.results['scores'][self.selected_files.index(file)])
+                self.plot_graph_left.plot([score[self.score_xaxis_dropdown.currentIndex()]], [score[self.score_yaxis_dropdown.currentIndex()]], pen=None, symbol='o', symbolBrush=color, symbolPen=None, symbolSize=10, name='ref')
             
-            
-
-
-
-       
-
-
-
-
-
-
-        

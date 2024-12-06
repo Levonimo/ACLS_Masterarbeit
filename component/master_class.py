@@ -3,10 +3,20 @@ import subprocess
 import numpy as np
 import pandas as pd
 import pyopenms as oms
+import concurrent.futures
+import multiprocessing
 
 
-
-
+def convert_file(Dfile, mzmlfile, path, mzml_path):
+    # Hier bauen Sie den Befehl zum Umwandeln der Datei
+    
+    command = f"msconvert {os.path.join(path, Dfile)} -o {os.path.join(mzml_path)} --mzML --filter \"peakPicking true 1-\""
+    try:
+        subprocess.run(command, check=True)
+        print(f'{Dfile} erfolgreich umgewandelt.')
+    except subprocess.CalledProcessError as e:
+        print(f'Fehler beim Umwandeln von {Dfile}: {e}')
+    
 
 
 
@@ -31,13 +41,35 @@ class DataPreparation:
 
         self.convert_d_to_mzml()
 
+    # def convert_d_to_mzml(self):
+    #     for file in os.listdir(self.path):
+    #         if file.endswith(".D"):
+    #             mzml_file = os.path.join(self.mzml_path, file.replace(".D", ".mzML"))
+    #             if not os.path.exists(mzml_file):
+    #                 command = f"msconvert {os.path.join(self.path, file)} -o {self.mzml_path} --mzML --filter \"peakPicking true 1-\""
+    #                 subprocess.run(command, shell=True, check=True)
+
+
     def convert_d_to_mzml(self):
-        for file in os.listdir(self.path):
-            if file.endswith(".D"):
-                mzml_file = os.path.join(self.mzml_path, file.replace(".D", ".mzML"))
-                if not os.path.exists(mzml_file):
-                    command = f"msconvert {os.path.join(self.path, file)} -o {self.mzml_path} --mzML --filter \"peakPicking true 1-\""
-                    subprocess.run(command, shell=True, check=True)
+        files = [file for file in os.listdir(self.path) if file.endswith(".D")]
+
+        mzml_file = [file.replace(".D", ".mzML") for file in files]
+
+        mzml_file = [file for file in mzml_file if not os.path.exists(os.path.join(self.mzml_path, file))]
+
+        files_to_process = [file for file in files if file.replace(".D", ".mzML") in mzml_file]
+        print(multiprocessing.cpu_count())
+        max_workers = 4
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Aufgaben an den Executor übergeben
+            futures = [executor.submit(convert_file, Dfile, mzmlfile, self.path, self.mzml_path) for Dfile, mzmlfile in zip(files_to_process, mzml_file)]
+
+            for future in concurrent.futures.as_completed(futures):
+                future.result()
+
+
+
 
     def get_file_names(self):
         files = os.listdir(self.mzml_path)
@@ -65,7 +97,7 @@ class DataPreparation:
             raise TypeError("file_path must be a string.")
         if not os.path.isfile(file_path):
             raise ValueError("file_path must be a valid file path.")
-
+        print(file_path)
         exp = oms.MSExperiment()
         oms.MzMLFile().load(file_path, exp)
         chromatogram = []
