@@ -133,7 +133,7 @@ class CrossrefFileSelectionWindow(QDialog):
         fileGroupboxLayout.addWidget(self.select_button, 9, col+1, 1, 1)
 
         fileGroupbox.setLayout(fileGroupboxLayout)
-        layout.addWidget(fileGroupbox, 0, 0, 1, 1)
+        layout.addWidget(fileGroupbox)
 
 
 
@@ -324,12 +324,15 @@ class PCAWindow(QDialog):
         ResultLayout.addWidget(self.label, 0, 0, 1, 1)
         self.score_xaxis_dropdown = QComboBox(self)
         self.score_xaxis_dropdown.addItems([f'Component {i+1}' for i in range(int(self.number_PC))])
+        self.score_xaxis_dropdown.setCurrentIndex(0)
         ResultLayout.addWidget(self.score_xaxis_dropdown, 0, 1, 1, 1)
 
         self.label = QLabel('Component for Y-Axis:', self)
         ResultLayout.addWidget(self.label, 1, 0, 1, 1)
         self.score_yaxis_dropdown = QComboBox(self)
         self.score_yaxis_dropdown.addItems([f'Component {i+1}' for i in range(int(self.number_PC))])
+        # set default value to the second component
+        self.score_yaxis_dropdown.setCurrentIndex(1)
         ResultLayout.addWidget(self.score_yaxis_dropdown, 1, 1, 1, 1)
 
         self.score_plot_button = QPushButton('Display Scores', self)
@@ -490,8 +493,8 @@ class PCAWindow(QDialog):
             color = self.colors[sample[-3:]]
             self.plot_graph_left.plot([scores[i, 0]], [scores[i, 1]], pen=None, symbol='o', symbolBrush=color)
 
-        self.plot_graph_left.setLabel('bottom', 'Component 1')
-        self.plot_graph_left.setLabel('left', 'Component 2')
+        self.plot_graph_left.setLabel('bottom', self.score_xaxis_dropdown.currentText())
+        self.plot_graph_left.setLabel('left', self.score_yaxis_dropdown.currentText())
 
          # get all unique file endings
         unique_endings = list(set([file_name[-3:] for file_name in self.selected_files]))
@@ -521,10 +524,14 @@ class PCAWindow(QDialog):
         # Update checkbox for number of PC in loadings plot
         self.loadings_compound_dropdown.clear()
         self.loadings_compound_dropdown.addItems([f'Component {i+1}' for i in range(n_components)])
+        
         self.score_xaxis_dropdown.clear()
         self.score_xaxis_dropdown.addItems([f'Component {i+1}' for i in range(n_components)])
+        
         self.score_yaxis_dropdown.clear()
         self.score_yaxis_dropdown.addItems([f'Component {i+1}' for i in range(n_components)])
+        self.score_yaxis_dropdown.setCurrentIndex(1)
+        
 
 
     def display_loadings(self):
@@ -585,6 +592,20 @@ class PCAWindow(QDialog):
             # add them to the score plot with label 'ref'
             for file in crossref_files:
                 color = self.colors[file[-3:]]
-                score = np.dot(self.results['loadings'], self.results['scores'][self.selected_files.index(file)])
-                self.plot_graph_left.plot([score[self.score_xaxis_dropdown.currentIndex()]], [score[self.score_yaxis_dropdown.currentIndex()]], pen=None, symbol='o', symbolBrush=color, symbolPen=None, symbolSize=10, name='ref')
+
+
+
+
+                if self.data_from == 'Warped':
+                    data = self.warped_data[file]
+                else:
+                    data = self.unwarped_data[file]
+
+
+                if self.chrom_dim == '2D':
+                    score = np.dot(self.results['loadings'], np.sum(np.array(data), axis=1))
+                elif self.chrom_dim == '3D':
+                    score = np.dot(self.results['loadings'], np.array(data).flatten())
+
+                self.plot_graph_left.plot([score[self.score_xaxis_dropdown.currentIndex()]], [score[self.score_yaxis_dropdown.currentIndex()]], pen=None, symbol='x', symbolBrush=color, symbolPen=None) #, symbolSize=10, name='ref')
             
