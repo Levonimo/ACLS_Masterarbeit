@@ -260,6 +260,13 @@ class MainWindow(QWidget):
                     self.print_to_output(f'New File Named: {input_word}.npy')
 
                     self.chromatograms = self.data_preparation.get_list_of_chromatograms(input_word, file_list=self.data_preparation.get_file_names())
+        
+        # check if chromatograms have the same length if not short them to the same length, take away the first elements
+        uniq_len = np.unique([len(chromatogram) for chromatogram in self.chromatograms.values()])
+        if uniq_len.size > 1:
+            min_len = np.min(uniq_len)
+            for name, chromatogram in self.chromatograms.items():
+                self.chromatograms[name] = chromatogram[-min_len:]
 
         
 
