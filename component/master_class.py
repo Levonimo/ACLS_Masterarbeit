@@ -7,7 +7,7 @@ import concurrent.futures
 import multiprocessing
 
 
-def convert_file(Dfile, mzmlfile, path, mzml_path):
+def convert_file(Dfile, path, mzml_path):
     # Hier bauen Sie den Befehl zum Umwandeln der Datei
     
     command = f"msconvert {os.path.join(path, Dfile)} -o {os.path.join(mzml_path)} --mzML --filter \"peakPicking true 1-\""
@@ -63,7 +63,7 @@ class DataPreparation:
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Aufgaben an den Executor übergeben
-            futures = [executor.submit(convert_file, Dfile, mzmlfile, self.path, self.mzml_path) for Dfile, mzmlfile in zip(files_to_process, mzml_file)]
+            futures = [executor.submit(convert_file, Dfile, self.path, self.mzml_path) for Dfile in files_to_process]
 
             for future in concurrent.futures.as_completed(futures):
                 future.result()
