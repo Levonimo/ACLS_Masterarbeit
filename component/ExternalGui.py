@@ -609,3 +609,5 @@ class PCAWindow(QDialog):
 
                 self.plot_graph_left.plot([score[self.score_xaxis_dropdown.currentIndex()]], [score[self.score_yaxis_dropdown.currentIndex()]], pen=None, symbol='x', symbolBrush=color, symbolPen=None) #, symbolSize=10, name='ref')
             
+
+

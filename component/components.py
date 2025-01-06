@@ -13,13 +13,11 @@ from . import styles, config
 
 import webbrowser
 
-from PyQt5.QtWidgets import (QHBoxLayout, QPushButton, QWidget, QLayout, 
-                             QMenu, QAction,  QComboBox)
+from PyQt5.QtWidgets import (QHBoxLayout, QVBoxLayout, QPushButton, QWidget, QLayout, QLabel,
+                             QMenu, QAction,  QComboBox, QTableWidget, QTableWidgetItem)
 from PyQt5.QtCore import Qt, QPoint, QEvent
-from PyQt5.QtGui import QIcon, QStandardItemModel
+from PyQt5.QtGui import QStandardItemModel
 
-from functools import partial
-import re
 
 #=========================================================================================================
 
@@ -92,9 +90,12 @@ class MyBar(QWidget):
         btn_settings.setFixedSize(btn_size,btn_size)
         btn_settings.setStyleSheet(styles.SettingsButton)
 
-        self.actionshowDist = QAction("interaction lengths", self)
-        self.actionshowDist.setShortcut("Ctrl+D")
-        self.actionshowDist.setCheckable(True)
+        self.color_choose = QAction("Choose color schema", self)
+        self.color_choose.setShortcut("Ctrl+D")
+        # click event open ColorChoosWindow
+        self.color_window = ColorChoosWindow()
+        self.color_choose.triggered.connect(lambda: self.color_window.show())
+        
 
         self.actionclean_up = QAction("reset everything", self)
         self.actionclean_up.setShortcut("Ctrl+R")
@@ -103,7 +104,7 @@ class MyBar(QWidget):
         menu_setting.setToolTipsVisible(True)
         menu_setting.setStyleSheet(styles.Levin)
         menu_setting.addAction(self.actionclean_up)
-        menu_setting.addAction(self.actionshowDist)
+        menu_setting.addAction(self.color_choose)
         btn_settings.setMenu(menu_setting)
 
         # help
@@ -170,3 +171,93 @@ class MyBar(QWidget):
                                 self.parent.width(),
                                 self.parent.height())
             self.start = self.end
+
+# =========================================================================================================
+# ColorChoosWindow
+# =========================================================================================================
+
+
+class ColorChoosWindow(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.table = QTableWidget(0, 3)
+        self.table.setHorizontalHeaderLabels(["Variable", "Hex Color", "Preview"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+
+        # Initially insert one empty row
+        self.insertRowWithPreview()
+
+        # Connect itemChanged
+        self.table.itemChanged.connect(self.handleChange)
+
+        # Save Button
+        button = QPushButton("Save")
+        button.clicked.connect(self.saveColors)
+
+        # Layout
+        layout = QVBoxLayout()
+        layout.addWidget(self.table)
+        layout.addWidget(button)
+        self.setLayout(layout)
+
+    def insertRowWithPreview(self):
+        """Inserts a new row and sets a QLabel in the Preview column."""
+        row = self.table.rowCount()
+        self.table.insertRow(row)
+
+        # Create empty cells for "Variable" and "Hex Color"
+        self.table.setItem(row, 0, QTableWidgetItem(""))
+        self.table.setItem(row, 1, QTableWidgetItem(""))
+
+        # Create a QLabel for the preview column
+        label = QLabel()
+        label.setAlignment(Qt.AlignCenter)
+        self.table.setCellWidget(row, 2, label)
+
+    def handleChange(self, item):
+        """Update preview if the user changed the 'Hex Color' column, then ensure a new blank row."""
+        if item.column() == 1:
+            # Validate or update color
+            self.updatePreview(item.row())
+
+            # If both columns are filled in this row, add a new row
+            self.ensureNewRow(item.row())
+
+    def updatePreview(self, row):
+        """Set the background color of the preview label to the user-entered text."""
+        color_item = self.table.item(row, 1)
+        preview_label = self.table.cellWidget(row, 2)
+        if color_item and preview_label:
+            color_text = color_item.text()
+            # Basic validation for a hex color like "#RRGGBB"
+            if len(color_text) == 7 and color_text.startswith("#"):
+                preview_label.setStyleSheet(f"background-color: {color_text};")
+            else:
+                preview_label.setStyleSheet("")  # clear if invalid
+
+    def ensureNewRow(self, row):
+        """If both Variable and Hex Color columns in the current row are non-empty, insert another row."""
+        v_item = self.table.item(row, 0)
+        c_item = self.table.item(row, 1)
+        if v_item and c_item and v_item.text() and c_item.text():
+            # Insert a new row only if we don't already have a totally blank row at the bottom
+            # (Alternatively, just always insert a row.)
+            last_row = self.table.rowCount() - 1
+            # Check if the last row is already blank
+            if (self.table.item(last_row, 0) and not self.table.item(last_row, 0).text()) or \
+               (self.table.item(last_row, 1) and not self.table.item(last_row, 1).text()):
+                # There's already a blank row
+                return
+            self.insertRowWithPreview()
+
+    def saveColors(self):
+        """Collect all non-empty variable-color pairs and do something with them."""
+        self.colors = {}
+        for r in range(self.table.rowCount()):
+            var_item = self.table.item(r, 0)
+            col_item = self.table.item(r, 1)
+            if var_item and col_item and var_item.text() and col_item.text():
+                self.colors[var_item.text()] = col_item.text()
+        print(self.colors)  # or do something more sophisticated
+        self.close()

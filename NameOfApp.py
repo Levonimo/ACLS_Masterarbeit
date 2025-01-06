@@ -31,7 +31,7 @@ from component import MainWindow
 # Function to check if MSConvert.exe is in the PATH
 def check_msconvert():
     try:
-        subprocess.run(["MSConvert.exe", "--version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run("msconvert", check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
     return True
