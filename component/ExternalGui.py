@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, 
                              QListWidget, QCheckBox, QComboBox,QGridLayout, QGroupBox,
-                             QDesktopWidget, QListWidgetItem)
+                             QMessageBox)
 
 from PyQt5.QtCore import Qt
 
@@ -10,6 +10,8 @@ import pyqtgraph as pg
 from .groupmaker import GroupMaker
 from .components import CheckableComboBox
 import numpy as np
+from peek import peek
+from copy import copy
 
 # =========================================================================================================
 # Input Dialog
@@ -171,7 +173,7 @@ class CrossrefFileSelectionWindow(QDialog):
 # =========================================================================================================
 
 class PCAWindow(QDialog):
-    def __init__(self, file_names: list, warped: dict, unwarped: dict, parent=None) -> None:
+    def __init__(self, file_names: list, warped: dict, unwarped: dict, rt: list, parent=None) -> None:
         super().__init__(parent)
         self.setWindowTitle('PCA Settings')
         self.setMinimumSize(400, 400)
@@ -381,10 +383,38 @@ class PCAWindow(QDialog):
         
 
         LoadingsGroupBox.setLayout(LoadingsLayout)
-        layout.addWidget(LoadingsGroupBox, 2, 0, 1, 2)
+        layout.addWidget(LoadingsGroupBox, 2, 0, 1, 1)
 
 
         self.setLayout(layout)
+
+
+        #=========================================================================================================
+        # Add Groupbox for special functions
+        SpecialGroupBox = QGroupBox("Special Functions", self)
+        SpecialLayout = QGridLayout(SpecialGroupBox)
+
+        # add Button for show Varianze of Horns Parallel Analysis
+        self.horn_button = QPushButton('Horns Parallel Analysis', self)
+        SpecialLayout.addWidget(self.horn_button, 0, 0, 1, 1)
+        self.horn_button.clicked.connect(self.horn_parallel_analysis)
+
+        # add two input field for Retention Time values and a execute button to cut out a specific range of the chromatogram
+        self.retention_time_start = QLineEdit(self)
+        SpecialLayout.addWidget(self.retention_time_start, 1, 0, 1, 1)
+        
+        self.label = QLabel(' - ', self)
+        SpecialLayout.addWidget(self.label, 1, 1, 1, 1)
+        self.retention_time_end = QLineEdit(self)
+        SpecialLayout.addWidget(self.retention_time_end, 1, 2, 1, 1)
+
+        self.cut_button = QPushButton('Cut Chromatogram', self)
+        SpecialLayout.addWidget(self.cut_button, 1, 3, 1, 1)
+        self.cut_button.clicked.connect(self.cut_chromatogram)
+
+        SpecialGroupBox.setLayout(SpecialLayout)
+        layout.addWidget(SpecialGroupBox, 2, 1, 1, 1)
+
 
 
         #=========================================================================================================
@@ -394,9 +424,10 @@ class PCAWindow(QDialog):
         self.selected_files = None
         self.method = None
         self.scaler = None
-        self.data = None
+        self.selected_data = None
         self.warped_data = warped
         self.unwarped_data = unwarped   
+        self.rt = rt
         self.results = None
 
         #=========================================================================================================
@@ -443,18 +474,28 @@ class PCAWindow(QDialog):
 
 
     def submit(self):
-        self.number_PC = self.input_number_PC.text()
+        # Get the parameters from the input fields
+        self.number_PC = int(self.input_number_PC.text())
         self.selected_files = [file_name for file_name, checkbox in self.checkbox_dict.items() if checkbox.isChecked()]
         self.method = self.method_dropdown.currentText()
         self.scaler = self.scaler_dropdown.currentText()
         self.data_from = self.data_dropdown.currentText()
         self.chrom_dim = self.chrom_dropdown.currentText()
-        n_components = int(self.number_PC)
+
         
-        # print("warped data:", self.warped_data)
-
-        # print("Datatyoe of warped data:", type(self.warped_data))
-
+        # Check if the number of components is valid
+        if self.number_PC < 1:
+            # Show an error message if the number of components is invalid and set it to 1 and return
+            self.number_PC = 1
+            self.input_number_PC.setText('1')
+            QMessageBox.critical(self, 'Error', 'The number of components must be at least 1.')
+            return
+        elif self.number_PC > len(self.selected_files):
+            # Show an error message if the number of components is invalid and set it to the number of selected files
+            self.number_PC = len(self.selected_files)
+            self.input_number_PC.setText(str(len(self.selected_files)))
+            QMessageBox.critical(self, 'Error', 'The number of components must be less or equal to the number of selected files.')
+            return
 
         # Load Warped or Unwarped data depending on the selected filenames
         if self.data_from == 'Warped':  
@@ -468,13 +509,13 @@ class PCAWindow(QDialog):
         # print("Selected Files:", self.selected_files)
         # print("Data Keys:", data.keys())
 
-        selected_data = {key: data[key] for key in self.selected_files if key in data}
+        self.selected_data = {key: data[key] for key in self.selected_files if key in data}
         # print("Selected Data:", selected_data)
 
 
         # Perform PCA with the given parameters, only the selected files
         # should be used for the PCA
-        scores, loadings, explained_variance = perform_pca(selected_data, n_components, self.scaler, self.method, self.chrom_dim)
+        scores, loadings, explained_variance = perform_pca(self.selected_data, self.number_PC, self.scaler, self.method, self.chrom_dim)
 
 
         # The results should be stored in the results attribute
@@ -509,12 +550,18 @@ class PCAWindow(QDialog):
 
         # Plot the explained variance as Barplot
         self.plot_graph_right.clear()
-        bar_graph = pg.BarGraphItem(x=range(1, n_components+1), height=explained_variance, width=0.6, brush='b')
+        self.plot_graph_right.enableAutoRange()
+        
+        bar_graph = pg.BarGraphItem(x=range(1, self.number_PC+1), height=explained_variance.cumsum(), width=0.6, brush='b')
         self.plot_graph_right.addItem(bar_graph)
         # add total explained variance as line plot 
-        self.plot_graph_right.plot(range(1, n_components+1), explained_variance.cumsum(), pen=pg.mkPen(color=(255, 0, 0)))
+        self.plot_graph_right.plot(range(1, self.number_PC+1), explained_variance, pen=pg.mkPen(color=(255, 0, 0)))
         self.plot_graph_right.setLabel('left', 'Explained Variance')
         self.plot_graph_right.setLabel('bottom', 'Component')
+        # only show integer ticks
+        self.plot_graph_right.getAxis("bottom").setTicks([[(i, str(i)) for i in range(1, self.number_PC+1)]])
+        self.plot_graph_right.enableAutoRange()
+        
         
        
               
@@ -523,13 +570,13 @@ class PCAWindow(QDialog):
 
         # Update checkbox for number of PC in loadings plot
         self.loadings_compound_dropdown.clear()
-        self.loadings_compound_dropdown.addItems([f'Component {i+1}' for i in range(n_components)])
+        self.loadings_compound_dropdown.addItems([f'Component {i+1}' for i in range(self.number_PC)])
         
         self.score_xaxis_dropdown.clear()
-        self.score_xaxis_dropdown.addItems([f'Component {i+1}' for i in range(n_components)])
+        self.score_xaxis_dropdown.addItems([f'Component {i+1}' for i in range(self.number_PC)])
         
         self.score_yaxis_dropdown.clear()
-        self.score_yaxis_dropdown.addItems([f'Component {i+1}' for i in range(n_components)])
+        self.score_yaxis_dropdown.addItems([f'Component {i+1}' for i in range(self.number_PC)])
         self.score_yaxis_dropdown.setCurrentIndex(1)
         
 
@@ -537,7 +584,6 @@ class PCAWindow(QDialog):
     def display_loadings(self):
         # Get the selected component
         component = self.loadings_compound_dropdown.currentIndex()
-        rt=np.load('./Outputs/retention_time.npy', allow_pickle=True)
         # Get the loadings of the selected component
         if self.chrom_dim == '2D':
             loadings = self.results['loadings'][component]
@@ -548,7 +594,7 @@ class PCAWindow(QDialog):
         self.loadings_plot.clear()
         # reset zoom
         self.loadings_plot.enableAutoRange()
-        self.loadings_plot.plot(rt, loadings, pen=pg.mkPen(color=(0, 0, 0)))
+        self.loadings_plot.plot(self.rt, loadings, pen=pg.mkPen(color=(0, 0, 0)))
         self.loadings_plot.setLabel('bottom', 'Retention Time')
         self.loadings_plot.setLabel('left', 'Loading')
 
@@ -609,5 +655,54 @@ class PCAWindow(QDialog):
 
                 self.plot_graph_left.plot([score[self.score_xaxis_dropdown.currentIndex()]], [score[self.score_yaxis_dropdown.currentIndex()]], pen=None, symbol='x', symbolBrush=color, symbolPen=None) #, symbolSize=10, name='ref')
             
+
+    #=========================================================================================================
+    # Special Functions
+
+    def horn_parallel_analysis(self):
+        '''
+        '''
+
+        # print shape of the first dictioary element
+        shape = self.selected_data[self.selected_files[0]].shape
+        
+        # generate random data in the shape of the data matrix
+        random_chromatograms = {file_name: np.random.rand(*shape) for file_name in self.selected_files}
+
+       
+        
+        # perform PCA on the random data
+        _, _, random_explained_variance = perform_pca(random_chromatograms, self.number_PC, self.scaler, self.method, self.chrom_dim)
+
+        
+        # add the explained variance of the random data to the explained variance of the real data
+        self.plot_graph_right.plot(range(1, self.number_PC+1), random_explained_variance, pen=pg.mkPen(color=(0, 255, 0)))
+
+
+    def cut_chromatogram(self):
+        '''
+        '''
+
+        print(self.warped_data[self.selected_files[0]].shape)
+        # get the retention time values from the input fields
+        rt_start = float(self.retention_time_start.text())
+        
+        rt_end = float(self.retention_time_end.text())
+        
+
+        # get the indices of the retention time values that are in the range of the input values
+        indices = np.where((self.rt <= rt_start) | (self.rt >= rt_end))[0]
+        
+
+        # cut out the values of the index of the chromatograms in the selected data:
+        self.warped_data = {file_name: data[indices] for file_name, data in self.warped_data.items()}
+        self.unwarped_data = {file_name: data[indices] for file_name, data in self.unwarped_data.items()}
+        
+        # update the retention time values
+        self.rt = copy(self.rt[indices])
+
+        print(self.warped_data[self.selected_files[0]].shape)
+
+
 
 

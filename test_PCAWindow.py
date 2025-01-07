@@ -15,10 +15,11 @@ def main():
     # print(unwarped)
     targets = np.load('./Outputs/selected_target.npy', allow_pickle=True)
     # print(targets)
+    rt = np.load('./Outputs/retention_time.npy', allow_pickle=True)
     
     
     # Example usage of PCAWindow
-    pca_window = PCAWindow(targets, warped, unwarped)
+    pca_window = PCAWindow(targets, warped, unwarped ,rt)
     if pca_window.exec_():
         print(f'PCA Results: {pca_window.results}')
 

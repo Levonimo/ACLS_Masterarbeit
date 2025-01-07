@@ -93,8 +93,7 @@ class MyBar(QWidget):
         self.color_choose = QAction("Choose color schema", self)
         self.color_choose.setShortcut("Ctrl+D")
         # click event open ColorChoosWindow
-        self.color_window = ColorChoosWindow()
-        self.color_choose.triggered.connect(lambda: self.color_window.show())
+        self.color_choose.triggered.connect(lambda: ColorChoosWindow().show())
         
 
         self.actionclean_up = QAction("reset everything", self)

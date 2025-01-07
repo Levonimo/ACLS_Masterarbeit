@@ -33,7 +33,8 @@ class MainWindow(QWidget):
         # Set window title and size
         self.setWindowTitle('GC-MS Warping Tool')
         # Set the window icon
-        app_icon = QIcon("images/Logo_ICBT_Analytik_round.ico")
+        icon_path = os.path.join(os.path.dirname(__file__), 'images', 'Logo_ICBT_Analytik_round.ico')
+        app_icon = QIcon(icon_path)
         self.setWindowIcon(app_icon)
 
         # Layout
@@ -352,7 +353,7 @@ class MainWindow(QWidget):
         self.print_to_output('Chromatograms plotted.')
 
     def StatisticAnalyse(self) -> None:
-        dialog = PCAWindow(self.selected_target,self.warped_chromatograms,self.chromatograms, self)
+        dialog = PCAWindow(self.selected_target,self.warped_chromatograms,self.chromatograms, self.rt, self)
         if dialog.exec_():
             results = dialog.results
             self.print_to_output('PCA finished.')
