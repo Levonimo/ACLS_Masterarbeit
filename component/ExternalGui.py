@@ -578,6 +578,11 @@ class PCAWindow(QDialog):
         self.score_yaxis_dropdown.clear()
         self.score_yaxis_dropdown.addItems([f'Component {i+1}' for i in range(self.number_PC)])
         self.score_yaxis_dropdown.setCurrentIndex(1)
+
+
+        # load the first component of the loadings
+        self.display_loadings()
+
         
 
 
