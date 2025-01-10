@@ -5,6 +5,7 @@ import pandas as pd
 import pyopenms as oms
 import concurrent.futures
 import multiprocessing
+from concurrent.futures import ThreadPoolExecutor
 
 
 def convert_file(Dfile, path, mzml_path):
@@ -128,14 +129,28 @@ class DataPreparation:
             # strip the ending
             file = file.replace('.npy','')
         
+        '''
+        def process_file(name):
+            file_path = os.path.join(self.mzml_path, name + '.mzML')
+            if not os.path.isfile(file_path):
+                raise ValueError(f"{file_path} does not exist.")
+            return name, self.mzml_to_array(file_path)
+        '''
+        
 
         if file_list:
             if not os.path.isfile(self.path+ '/' +file+'.npy'):
+                '''
+                with ThreadPoolExecutor() as executor:
+                    results = executor.map(process_file, file_list)
+                    self.chromatograms = {name: data for name, data in results}
+                '''
                 for name in file_list:
                     file_path = os.path.join(self.mzml_path, name+'.mzML')
                     if not os.path.isfile(file_path):
                         raise ValueError(f"{file_path} does not exist.")
                     self.chromatograms[name] = self.mzml_to_array(file_path)
+                
                 np.save(self.path+ '/' +file+'.npy', self.chromatograms)
             else:
                 self.chromatograms = np.load(self.path+ '/' +file+'.npy', allow_pickle=True).item()

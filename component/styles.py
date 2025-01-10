@@ -247,6 +247,14 @@ QSpinBox::up-arrow:disabled { image: url(component/images/transparent.png); widt
 QSpinBox::down-arrow:disabled { image: url(component/images/transparent.png); width: 10px; height: 10px;}
 
 
+QListWidget {
+  background-color: rgb(33, 37, 43);
+  color: rgb(255, 255, 255);
+  border: 1px solid rgb(33, 37, 43);
+  border-radius: 5px;
+}
+
+
 QWidget {
 background-color: rgb(52, 59, 72);
 }
