@@ -1,7 +1,7 @@
 import sys
 import os
 from PyQt5.QtWidgets import QApplication
-from component.ExternalGui import PCAWindow
+from component.AnalysisGui import PCAWindow
 import numpy as np
 
 sys.path.insert(1, os.path.dirname(__file__))
@@ -16,10 +16,13 @@ def main():
     targets = np.load('./Outputs/selected_target.npy', allow_pickle=True)
     # print(targets)
     rt = np.load('./Outputs/retention_time.npy', allow_pickle=True)
+
+    # mz from range 
+    mz_list = np.round(np.arange(35, 400.1, 1), 1)
     
     
     # Example usage of PCAWindow
-    pca_window = PCAWindow(targets, warped, unwarped ,rt)
+    pca_window = PCAWindow(targets, warped, unwarped ,rt, mz_list)
     if pca_window.exec_():
         print(f'PCA Results: {pca_window.results}')
 

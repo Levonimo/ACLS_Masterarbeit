@@ -9,15 +9,16 @@ from . import styles
 from .Warping import correlation_optimized_warping as COW
 from .styles_pyqtgraph import graph_style_chromatogram
 
-from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton,
+from PyQt5.QtWidgets import (QWidget, QPushButton,
                               QFileDialog, QLabel, QTextEdit,  
                               QGridLayout, QGroupBox, QSlider)
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 
 import pyqtgraph as pg
 
-from .ExternalGui import InputDialog, FileSelectionWindow, PCAWindow
+from .ExternalGui import InputDialog, FileSelectionWindow
+from .AnalysisGui import PCAWindow
 from .components import MyBar
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
