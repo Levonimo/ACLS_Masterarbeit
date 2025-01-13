@@ -57,6 +57,7 @@ class FileSelectionWindow(QDialog):
 
         self.list_widget = QListWidget()
         self.list_widget.addItems(file_names)
+        self.list_widget.itemDoubleClicked.connect(self.select_file)
         layout.addWidget(self.list_widget)
 
         self.select_button = QPushButton('Select')
