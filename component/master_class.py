@@ -59,8 +59,7 @@ class DataPreparation:
         mzml_file = [file for file in mzml_file if not os.path.exists(os.path.join(self.mzml_path, file))]
 
         files_to_process = [file for file in files if file.replace(".D", ".mzML") in mzml_file]
-        print(multiprocessing.cpu_count())
-        max_workers = 4
+        max_workers = multiprocessing.cpu_count()-4
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Aufgaben an den Executor übergeben

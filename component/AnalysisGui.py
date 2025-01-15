@@ -1,6 +1,9 @@
 from PyQt5.QtWidgets import (QDialog, QLabel, QLineEdit, QPushButton, 
                              QCheckBox, QComboBox,QGridLayout, QGroupBox,
-                             QMessageBox)
+                             QMessageBox, QToolTip)
+from PyQt5 import QtGui
+
+from PyQt5.QtGui import QCursor
 
 
 from .ExternalGui import CrossrefFileSelectionWindow
@@ -404,25 +407,7 @@ class PCAWindow(QDialog):
         # The result should be displayed in the result placeholder
         # The result should be a scatter plot of the first two components
         # of the PCA, colored by the file name endings 
-        self.plot_graph_left.clear()
-        self.plot_graph_left.enableAutoRange()        
-        for i, sample in enumerate(self.selected_files):
-            color = self.colors[sample[-3:]]
-            self.plot_graph_left.plot([scores[i, 0]], [scores[i, 1]], pen=None, symbol='o', symbolBrush=color)
-
-        self.plot_graph_left.setLabel('bottom', self.score_xaxis_dropdown.currentText())
-        self.plot_graph_left.setLabel('left', self.score_yaxis_dropdown.currentText())
-
-         # get all unique file endings
-        unique_endings = list(set([file_name[-3:] for file_name in self.selected_files]))
-        # add legend of all unique file endings
-        legend = self.plot_graph_left.addLegend()
-        # clear legend
-        legend.clear()
-        legend.setOffset((10, 10))  # Adjust the position of the legend if needed
-
-        for ending in unique_endings:
-            legend.addItem(pg.ScatterPlotItem(pen=None, brush=self.colors[ending], size=10), f'{ending}')
+        self.display_scores()
 
         # Plot the explained variance as Barplot
         self.plot_graph_right.clear()
@@ -489,10 +474,15 @@ class PCAWindow(QDialog):
         self.plot_graph_left.clear()
         self.loadings_plot.enableAutoRange()
 
+        scatter_data = []
         for i, sample in enumerate(self.selected_files):
             color = self.colors[sample[-3:]]
-            self.plot_graph_left.plot([scores[i, xaxis]], [scores[i, yaxis]], pen=None, symbol='o', symbolBrush=color)
-        
+            scatter_data.append({'pos': (scores[i, xaxis], scores[i, yaxis]), 'data': sample, 'brush': pg.mkBrush(color)})
+
+        scatter_plot = pg.ScatterPlotItem(size=10, pen=None, pxMode=True)
+        scatter_plot.addPoints(scatter_data)
+        self.plot_graph_left.addItem(scatter_plot)
+
         self.plot_graph_left.setLabel('bottom', f'Component {xaxis+1}')
         self.plot_graph_left.setLabel('left', f'Component {yaxis+1}')
 
@@ -505,6 +495,12 @@ class PCAWindow(QDialog):
 
         for ending in unique_endings:
             legend.addItem(pg.ScatterPlotItem(pen=None, brush=self.colors[ending], size=10), f'{ending}')
+
+        def on_click(plot, points):
+            for point in points:
+                QToolTip.showText(QCursor.pos(), point.data(), self.plot_graph_left.getViewWidget())
+
+        scatter_plot.sigClicked.connect(on_click)
 
 
     def crossref_files(self):
