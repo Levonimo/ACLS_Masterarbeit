@@ -81,6 +81,35 @@ To do:
     - Make a Windowfor File Selection with checkboxes
     - Add a checkbox for each file name in the list
 '''
+class WarpingSelectionWindow(QDialog):
+    def __init__(self, file_names, parent):
+        super().__init__(parent)
+        self.setWindowTitle('Select Files')
+        self.setGeometry(150, 150, 400, 300)
+
+        layout = QVBoxLayout()
+
+        # Layout
+        self.setStyleSheet(styles.Levin)
+
+        self.list_widget = QListWidget()
+        self.list_widget.addItems(file_names)
+        self.list_widget.setSelectionMode(QListWidget.MultiSelection)
+        layout.addWidget(self.list_widget)
+
+        self.select_button = QPushButton('Select')
+        self.select_button.clicked.connect(self.select_files)
+        layout.addWidget(self.select_button)
+
+        self.setLayout(layout)
+        self.selected_files = []
+
+    def select_files(self):
+        selected_items = self.list_widget.selectedItems()
+        if selected_items:
+            self.selected_files = [item.text() for item in selected_items]
+            self.accept()
+
 
 # =========================================================================================================
 # Crossref File Selection Window

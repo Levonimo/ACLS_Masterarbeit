@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import (QDialog, QLabel, QLineEdit, QPushButton, 
                              QCheckBox, QComboBox,QGridLayout, QGroupBox,
                              QMessageBox, QToolTip)
-from PyQt5 import QtGui
 
 from PyQt5.QtGui import QCursor
 

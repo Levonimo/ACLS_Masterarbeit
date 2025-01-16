@@ -17,7 +17,7 @@ from PyQt5.QtCore import Qt
 
 import pyqtgraph as pg
 
-from .ExternalGui import InputDialog, FileSelectionWindow
+from .ExternalGui import InputDialog, FileSelectionWindow, WarpingSelectionWindow
 from .AnalysisGui import PCAWindow
 from .components import MyBar
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -278,9 +278,9 @@ class MainWindow(QWidget):
         # add 'All' at the beginning to the list of file names
         file_names.insert(0, 'All')
 
-        dialog = FileSelectionWindow(file_names, self)
+        dialog = WarpingSelectionWindow(file_names, self)
         if dialog.exec_():
-            self.selected_target = dialog.selected_file
+            self.selected_target = dialog.selected_files
             if self.selected_target == 'All':
                 self.selected_target = self.data_preparation.get_file_names()
         else:
