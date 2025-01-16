@@ -319,9 +319,9 @@ class MainWindow(QWidget):
         self.btn_plot.setEnabled(True)
         self.btn_analyse.setEnabled(True)
         
-        # np.save('./Outputs/warped_chromatograms.npy', self.warped_chromatograms)
-        # np.save('./Outputs/unwarped_chromatograms.npy', self.chromatograms)
-        # np.save('./Outputs/selected_target.npy', self.selected_target)
+        np.save('./Outputs/warped_chromatograms.npy', self.warped_chromatograms)
+        np.save('./Outputs/unwarped_chromatograms.npy', self.chromatograms)
+        np.save('./Outputs/selected_target.npy', self.selected_target)
         
     
     # Plotting the chromatograms all unwarped chromatograms in the top image and all warped chromatograms in the lower image
