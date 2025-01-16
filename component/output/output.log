@@ -11,3 +11,10 @@
 2025-01-10 10:07:19,571 - Run: 24b813c8-5e48-49ce-9e77-c6c60129327b Time: <class 'datetime.datetime'> Chromatograms m/z cut for values: [90.0]. New shape: (5157, 357)
 2025-01-13 13:24:38,434 - Program started with run ID: 48c22844-7a3e-466d-aa69-118672208bb0
 2025-01-13 13:29:29,679 - Program started with run ID: 42da4be0-6d37-4f42-b9f3-fb2ff44c2480
+2025-01-15 08:44:06,574 - Program started with run ID: 81a1ef29-f27c-4695-ab17-c238c39467a7
+2025-01-15 08:45:19,341 - Run: 81a1ef29-f27c-4695-ab17-c238c39467a7 Chromatograms region cut from 19.89 to 20.01 minutes. Old shape: (5157, 366) New shape: (5130, 366)
+2025-01-15 08:46:38,752 - Run: 81a1ef29-f27c-4695-ab17-c238c39467a7 Chromatograms region cut from 25.5 to 26.1 minutes. Old shape: (5130, 366) New shape: (4995, 366)
+2025-01-15 08:48:00,814 - Run: 81a1ef29-f27c-4695-ab17-c238c39467a7 Chromatograms region cut from 0.0 to 5.5 minutes. Old shape: (4995, 366) New shape: (4902, 366)
+2025-01-15 08:49:01,017 - Run: 81a1ef29-f27c-4695-ab17-c238c39467a7 Chromatograms region cut from 7.55 to 7.75 minutes. Old shape: (4902, 366) New shape: (4857, 366)
+2025-01-15 14:05:06,414 - Run: 81a1ef29-f27c-4695-ab17-c238c39467a7 Chromatograms region cut from 19.57 to 19.69 minutes. Old shape: (4857, 366) New shape: (4830, 366)
+2025-01-15 14:05:25,607 - Run: 81a1ef29-f27c-4695-ab17-c238c39467a7 Chromatograms region cut from 27.5 to 29.0 minutes. Old shape: (4830, 366) New shape: (4718, 366)
