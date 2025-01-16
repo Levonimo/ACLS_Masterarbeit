@@ -4,7 +4,8 @@ from PyQt5.QtWidgets import (QDialog, QLabel, QLineEdit, QPushButton,
 
 from PyQt5.QtGui import QCursor
 
-
+import sys 
+import os
 from .ExternalGui import CrossrefFileSelectionWindow
 from .PCA import perform_pca
 from .styles_pyqtgraph import graph_style_chromatogram
@@ -23,7 +24,7 @@ from datetime import datetime
 # =========================================================================================================
 
 class PCAWindow(QDialog):
-    def __init__(self, file_names: list, warped: dict, unwarped: dict, rt: list, mz_list: list, parent=None) -> None:
+    def __init__(self, file_names: list, warped: dict, unwarped: dict, rt: list, mz_list: list, parent) -> None:
         super().__init__(parent)
         self.setWindowTitle('PCA Settings')
         self.setMinimumSize(400, 400)
@@ -310,6 +311,10 @@ class PCAWindow(QDialog):
 
         #=========================================================================================================
         # Colors by file name endings
+        # load groups 
+        self.groups = np.load(os.path.join(parent.selected_folder,'meta', 'groups.npy'), allow_pickle=True)
+        
+        # for the sake of this project if one group contains ('SOO', 'SOL', 'SGO', 'SGL', 'OOO', 'FFF') the color are the following
         self.colors = {
             'SOO': (255, 0, 0, 255), # light red
             'SOL': (139, 0, 0, 255), # dark red

@@ -38,6 +38,12 @@ class DataPreparation:
         self.mzml_path = os.path.join(self.path, "mzml")
         os.makedirs(self.mzml_path, exist_ok=True)
 
+        self.meta_path = os.path.join(self.path, "meta")
+        os.makedirs(self.meta_path, exist_ok=True)
+
+        self.output_path = os.path.join(self.path, "output")
+        os.makedirs(self.output_path, exist_ok=True)
+
         self.mZ_totlist = np.round(np.arange(35, 400.1, 0.1), 1)
 
         self.convert_d_to_mzml()

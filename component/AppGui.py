@@ -20,6 +20,7 @@ import pyqtgraph as pg
 from .ExternalGui import InputDialog, FileSelectionWindow, WarpingSelectionWindow
 from .AnalysisGui import PCAWindow
 from .components import MyBar
+from .groupmaker import GroupMaker
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 
@@ -92,10 +93,11 @@ class MainWindow(QWidget):
         InputLayout.addWidget(self.btn_analyse, 6, 0)
 
 
-        # Buttons in die erste Spalte
-        for i in range(7, 8):
-            button = QPushButton(f'Button {i + 1}', self)
-            InputLayout.addWidget(button, i, 0)  # Positioniere die Buttons in Spalte 0, Zeilen 0-7
+        self.btn_testResults = QPushButton('Test Results', self)
+        self.btn_testResults.clicked.connect(self.TestResults)
+        self.btn_testResults.setEnabled(False)
+        InputLayout.addWidget(self.btn_testResults, 7, 0)
+
 
         # Textfeld in die erste Reihe, zweite Spalte
         self.output_field = QTextEdit(self)
@@ -204,11 +206,18 @@ class MainWindow(QWidget):
             self.print_to_output(f'DataPreparation initialized with folder: {self.selected_folder}')
             self.npy_import()
             if self.chromatograms:
+                self.rt = self.data_preparation.get_retention_time()
                 self.btn_show_files.setEnabled(True)
                 self.btn_select_file.setEnabled(True)
 
-            self.rt = self.data_preparation.get_retention_time()
-            np.save('./Outputs/retention_time.npy', self.rt)
+            
+            #np.save('./Outputs/retention_time.npy', self.rt)
+
+            Groups, _ = GroupMaker(self.data_preparation.get_file_names())
+            self.print_to_output('Groups created.')
+            self.print_to_output(f'Groups: {Groups}')
+            # save groups to file in folder self.selected_folder + meta
+            np.save(os.path.join(self.selected_folder, 'meta', 'Groups.npy'), Groups)
           
 
 
@@ -281,7 +290,7 @@ class MainWindow(QWidget):
         dialog = WarpingSelectionWindow(file_names, self)
         if dialog.exec_():
             self.selected_target = dialog.selected_files
-            if self.selected_target == 'All':
+            if 'All' in self.selected_target:
                 self.selected_target = self.data_preparation.get_file_names()
         else:
             self.print_to_output('Please select a file to compare with.')
@@ -319,9 +328,9 @@ class MainWindow(QWidget):
         self.btn_plot.setEnabled(True)
         self.btn_analyse.setEnabled(True)
         
-        np.save('./Outputs/warped_chromatograms.npy', self.warped_chromatograms)
-        np.save('./Outputs/unwarped_chromatograms.npy', self.chromatograms)
-        np.save('./Outputs/selected_target.npy', self.selected_target)
+        # np.save('./Outputs/warped_chromatograms.npy', self.warped_chromatograms)
+        # np.save('./Outputs/unwarped_chromatograms.npy', self.chromatograms)
+        # np.save('./Outputs/selected_target.npy', self.selected_target)
         
     
     # Plotting the chromatograms all unwarped chromatograms in the top image and all warped chromatograms in the lower image
@@ -354,21 +363,39 @@ class MainWindow(QWidget):
         self.print_to_output('Chromatograms plotted.')
 
     def StatisticAnalyse(self) -> None:
-        dialog = PCAWindow(self.selected_target,self.warped_chromatograms,self.chromatograms, self.rt, self)
+        dialog = PCAWindow(self.selected_target, self.warped_chromatograms, self.chromatograms, self.rt, self.data_preparation.mZ_totlist , parent=self)
         if dialog.exec_():
-            results = dialog.results
+            self.results = dialog.results
             self.print_to_output('PCA finished.')
             
-            #plot the loadings in bottom plot
-            self.plot_graph_bottom.clear()
-            # if ddimension of loadings is more than 1, sum it up
-            if len(results['loadings']) > 1:
-                self.plot_graph_bottom.plot(self.rt , np.sum(results['loadings'], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
-            else:
-                self.plot_graph_bottom.plot(self.rt , results['loadings'][0], pen=pg.mkPen(color=(0, 0, 0)))
-            self.plot_graph_bottom.setLabel('left', 'Intensity')
-            self.plot_graph_bottom.setLabel('bottom', 'Retention Time')
+            self.btn_testResults.setEnabled(True)
+
+    
+    def TestResults(self) -> None:
+        # select on which group the test should be performed
+        # get the group names from the meta folder
+        Groups = os.path.join(self.selected_folder, 'meta', 'Groups.npy')
         
+        if os.path.exists(Groups):
+            Group_dict = np.load(Groups, allow_pickle=True).item()
+            Group_item = [' | '.join(group) for group in Group_dict.values()]
+            dialog = FileSelectionWindow(Group_item, self)
+            if dialog.exec_():
+                selected_group = dialog.selected_file
+                self.print_to_output(f'Selected Group: {selected_group}')
+            else:
+                self.print_to_output('Please select a group.')
+                return
+            
+            # test the results on the selected group for normal distribution and homoscedasticity
+            # get the results from the PCA
+            
+            # group the results by the selected group (part of the filename)
+            self.print_to_output(f'{self.results('scores')}')
+            # perform the tests on the grouped results
+            # print the results of the tests
+            # save the results of the tests
+            
 
 
 
