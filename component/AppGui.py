@@ -21,7 +21,7 @@ from .ExternalGui import InputDialog, FileSelectionWindow, WarpingSelectionWindo
 from .AnalysisGui import PCAWindow
 from .components import MyBar
 from .groupmaker import GroupMaker
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import uuid
 
 
 
@@ -95,7 +95,7 @@ class MainWindow(QWidget):
 
         self.btn_testResults = QPushButton('Test Results', self)
         self.btn_testResults.clicked.connect(self.TestResults)
-        self.btn_testResults.setEnabled(False)
+        #self.btn_testResults.setEnabled(False)
         InputLayout.addWidget(self.btn_testResults, 7, 0)
 
 
@@ -234,7 +234,7 @@ class MainWindow(QWidget):
     def SelectionReferenceFile(self) -> None:
         if self.data_preparation:
             file_names = self.data_preparation.get_file_names()
-            dialog = FileSelectionWindow(file_names, self)
+            dialog = FileSelectionWindow(file_names, parent = self)
             if dialog.exec_():
                 self.selected_reference_file = copy(dialog.selected_file)
                 self.print_to_output(f'Reference file: {self.selected_reference_file}')
@@ -250,11 +250,11 @@ class MainWindow(QWidget):
             npy_files = [file for file in os.listdir(self.selected_folder) if file.endswith('.npy')]
             if npy_files:
                 npy_files.append('<New File>')
-                dialog = FileSelectionWindow(npy_files, self)
+                dialog = FileSelectionWindow(npy_files, parent = self)
                 if dialog.exec_():
                     selected_Chromatograms = dialog.selected_file
                     if selected_Chromatograms == '<New File>':
-                        input_dialog = InputDialog(self)
+                        input_dialog = InputDialog(parent = self)
                         if input_dialog.exec_():
                             input_word = input_dialog.input_text
                             self.print_to_output(f'New File Named: {input_word}.npy')
@@ -265,7 +265,7 @@ class MainWindow(QWidget):
                 
                     
             else:
-                input_dialog = InputDialog(self)
+                input_dialog = InputDialog(parent = self)
                 if input_dialog.exec_():
                     input_word = input_dialog.input_text
                     self.print_to_output(f'New File Named: {input_word}.npy')
@@ -287,7 +287,7 @@ class MainWindow(QWidget):
         # add 'All' at the beginning to the list of file names
         file_names.insert(0, 'All')
 
-        dialog = WarpingSelectionWindow(file_names, self)
+        dialog = WarpingSelectionWindow(file_names, parent = self)
         if dialog.exec_():
             self.selected_target = dialog.selected_files
             if 'All' in self.selected_target:
@@ -366,7 +366,8 @@ class MainWindow(QWidget):
         dialog = PCAWindow(self.selected_target, self.warped_chromatograms, self.chromatograms, self.rt, self.data_preparation.mZ_totlist , parent=self)
         if dialog.exec_():
             self.results = dialog.results
-            self.print_to_output('PCA finished.')
+            self.print_to_output(f'PCA finished. Results \n {self.results}')
+            np.save(os.path.join(self.selected_folder, 'output', 'PCA_results.npy'), self.results)
             
             self.btn_testResults.setEnabled(True)
 
@@ -378,20 +379,20 @@ class MainWindow(QWidget):
         
         if os.path.exists(Groups):
             Group_dict = np.load(Groups, allow_pickle=True).item()
-            Group_item = [' | '.join(group) for group in Group_dict.values()]
-            dialog = FileSelectionWindow(Group_item, self)
+            Group_item = [':'.join([number, ' | '.join(group)]) for number, group in zip(Group_dict.keys(), Group_dict.values())]
+            dialog = FileSelectionWindow(Group_item, parent = self)
             if dialog.exec_():
                 selected_group = dialog.selected_file
                 self.print_to_output(f'Selected Group: {selected_group}')
             else:
                 self.print_to_output('Please select a group.')
                 return
-            
+
+
             # test the results on the selected group for normal distribution and homoscedasticity
             # get the results from the PCA
             
             # group the results by the selected group (part of the filename)
-            self.print_to_output(f'{self.results('scores')}')
             # perform the tests on the grouped results
             # print the results of the tests
             # save the results of the tests
@@ -399,8 +400,3 @@ class MainWindow(QWidget):
 
 
 
-# if __name__ == '__main__':
-#     app = QApplication(sys.argv)
-#     ex = MainWindow()
-#     ex.show()
-#     sys.exit(app.exec_())

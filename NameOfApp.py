@@ -23,6 +23,7 @@ import sys
 import subprocess
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
+
 # add betplip path to directory 
 sys.path.insert(1, os.path.dirname(__file__))
 
