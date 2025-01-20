@@ -352,6 +352,8 @@ class PCAWindow(QDialog):
     #=========================================================================================================
     # Functions for the buttons
     def close(self):
+        # Log the end of the program
+        logging.info(f"PCA analysis finished. Results: {self.results}")
 
         self.accept()
 
@@ -400,6 +402,8 @@ class PCAWindow(QDialog):
         # should be used for the PCA
         scores, loadings, explained_variance = perform_pca(self.selected_data, self.number_PC, self.scaler, self.method, self.chrom_dim)
 
+        # combine the scores in a dictionary with the file names as keys
+        scores = {file_name: score for file_name, score in zip(self.selected_files, scores)}
 
         # The results should be stored in the results attribute
         self.results = {
@@ -479,9 +483,9 @@ class PCAWindow(QDialog):
         self.loadings_plot.enableAutoRange()
 
         scatter_data = []
-        for i, sample in enumerate(self.selected_files):
+        for sample in self.selected_files:
             color = self.colors[sample[-3:]]
-            scatter_data.append({'pos': (scores[i, xaxis], scores[i, yaxis]), 'data': sample, 'brush': pg.mkBrush(color)})
+            scatter_data.append({'pos': (scores[sample][xaxis], scores[sample][yaxis]), 'data': sample, 'brush': pg.mkBrush(color)})
 
         scatter_plot = pg.ScatterPlotItem(size=10, pen=None, pxMode=True)
         scatter_plot.addPoints(scatter_data)

@@ -21,7 +21,9 @@ from .ExternalGui import InputDialog, FileSelectionWindow, WarpingSelectionWindo
 from .AnalysisGui import PCAWindow
 from .components import MyBar
 from .groupmaker import GroupMaker
+
 import uuid
+import logging
 
 
 
@@ -31,6 +33,8 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.chromatograms = dict()
+        self.run_id = uuid.uuid4()
+        logging.basicConfig(filename=f'./Logs/{self.run_id}.log', level=logging.INFO)
         
         # Set window title and size
         self.setWindowTitle('GC-MS Warping Tool')
@@ -194,6 +198,8 @@ class MainWindow(QWidget):
 
         if folder_path:
             self.selected_folder = folder_path
+            # Configure logging
+            logging.basicConfig(filename=os.path.join(self.selected_folder,'meta', 'logs.log'), level=logging.INFO, format='%(asctime)s - %(message)s')
             self.print_to_output(f'Gewählter Ordner: {folder_path}')
             self.btn_init.setEnabled(True)  # Aktivieren, wenn ein Ordner ausgewählt wurde
         else:
@@ -222,6 +228,7 @@ class MainWindow(QWidget):
 
 
     def print_to_output(self, text: str) -> None:
+        logging.info(text)
         self.output_field.append(text)  # Fügt Text am Ende des QTextEdit hinzu
 
     def ShowNameOfAllFiles(self) -> None:
