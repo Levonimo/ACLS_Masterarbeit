@@ -353,8 +353,11 @@ class PCAWindow(QDialog):
     # Functions for the buttons
     def close(self):
         # Log the end of the program
-        logging.info(f"PCA analysis finished in Run: {self.run_id}. \n Number of PC: {self.results["NumberPC"]}. \n Explained Variance: {self.results["explained_variance"]}. 
-                     \n Scores: {self.results["scores"]}. \n Loadings: {self.results["loadings"]}")
+        logging.info(f"PCA analysis finished in Run: {self.run_id}. "
+                     f"\n Number of PC: {self.results['NumberPC']}. "
+                     f"\n Explained Variance: {self.results['explained_variance']}. "
+                     f"\n Scores: {self.results['scores']}. "
+                     f"\n Loadings: {self.results['loadings']}")
 
         self.accept()
 
