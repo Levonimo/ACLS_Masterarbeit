@@ -34,7 +34,7 @@ class MainWindow(QWidget):
         super().__init__()
         self.chromatograms = dict()
         self.run_id = uuid.uuid4()
-        logging.basicConfig(filename=f'./Logs/{self.run_id}.log', level=logging.INFO)
+        
         
         # Set window title and size
         self.setWindowTitle('GC-MS Warping Tool')
@@ -91,13 +91,13 @@ class MainWindow(QWidget):
         self.btn_plot.setEnabled(False)
         InputLayout.addWidget(self.btn_plot, 5, 0)
 
-        self.btn_analyse = QPushButton('Statistic Analyse', self)
+        self.btn_analyse = QPushButton('PCA Analysis', self)
         self.btn_analyse.clicked.connect(self.StatisticAnalyse)
         self.btn_analyse.setEnabled(False)
         InputLayout.addWidget(self.btn_analyse, 6, 0)
 
 
-        self.btn_testResults = QPushButton('Test Results', self)
+        self.btn_testResults = QPushButton('Statistic Results', self)
         self.btn_testResults.clicked.connect(self.TestResults)
         #self.btn_testResults.setEnabled(False)
         InputLayout.addWidget(self.btn_testResults, 7, 0)
@@ -199,7 +199,7 @@ class MainWindow(QWidget):
         if folder_path:
             self.selected_folder = folder_path
             # Configure logging
-            logging.basicConfig(filename=os.path.join(self.selected_folder,'meta', 'logs.log'), level=logging.INFO, format='%(asctime)s - %(message)s')
+            logging.basicConfig(filename=os.path.join(self.selected_folder,'meta', f'logs_{self.run_id}.log'), level=logging.INFO, format='%(asctime)s - %(message)s')
             self.print_to_output(f'Gewählter Ordner: {folder_path}')
             self.btn_init.setEnabled(True)  # Aktivieren, wenn ein Ordner ausgewählt wurde
         else:
