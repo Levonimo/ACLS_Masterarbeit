@@ -9,3 +9,9 @@ Outputs/*
 # ignore all .h5 files and the directory that contains them
 *.h5
 SideProject/Data/*
+
+# Ignore all files for bulded app
+
+dist/*
+build/*
+*.spec
