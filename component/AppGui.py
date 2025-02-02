@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 import numpy as np
 from copy import copy
 import matplotlib.pyplot as plt
@@ -25,6 +26,23 @@ from .groupmaker import GroupMaker
 import uuid
 import logging
 
+def resource_path(relative_path):
+    """Return the absolute path to a resource, works for dev and for PyInstaller."""
+    try:
+        base_path = sys._MEIPASS  # When frozen by PyInstaller
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+def update_stylesheet_paths(stylesheet):
+    """Update stylesheet image URLs to absolute paths with file:/// prefix."""
+    return re.sub(
+        r'url\("images/([^"]+)"\)',
+        lambda m: 'url("file:///{0}")'.format(
+            resource_path(os.path.join("images", m.group(1))).replace("\\", "/")
+        ),
+        stylesheet
+    )
 
 
 
@@ -44,7 +62,8 @@ class MainWindow(QWidget):
         self.setWindowIcon(app_icon)
 
         # Layout
-        self.setStyleSheet(styles.Levin)
+        updated_styles = update_stylesheet_paths(styles.Levin)
+        self.setStyleSheet(updated_styles)
         self.setMinimumSize(900, 1200)
         self.setWindowFlags(Qt.FramelessWindowHint)
 

@@ -6,4 +6,4 @@ Configurations Help Path
 config.py
 """
 
-HELP_PATH = "https://http://clt-lab-n-1266/dokuwiki/doku.php?id=software:nameofapp"
+HELP_PATH = "http://clt-lab-n-1266/dokuwiki/doku.php?id=software:WARP"
