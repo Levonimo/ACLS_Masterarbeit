@@ -33,33 +33,33 @@ QCheckBox::indicator {
   width: 14px;
 }
 QCheckBox::indicator:unchecked {
-  image: url("images/checkbox_unchecked.png");
+  image: url("component/images/checkbox_unchecked.png");
 }
 QCheckBox::indicator:unchecked:hover, QCheckBox::indicator:unchecked:focus, QCheckBox::indicator:unchecked:pressed {
   border: none;
-  image: url("images/checkbox_unchecked_focus.png");
+  image: url("component/images/checkbox_unchecked_focus.png");
 }
 QCheckBox::indicator:unchecked:disabled {
-  image: url("images/checkbox_unchecked_disabled.png");
+  image: url("component/images/checkbox_unchecked_disabled.png");
 }
 QCheckBox::indicator:checked {
-  image: url("images/checkbox_checked.png");
+  image: url("component/images/checkbox_checked.png");
 }
 QCheckBox::indicator:checked:hover, QCheckBox::indicator:checked:focus, QCheckBox::indicator:checked:pressed {
   border: none;
-  image: url("images/checkbox_checked_focus.png");
+  image: url("component/images/checkbox_checked_focus.png");
 }
 QCheckBox::indicator:checked:disabled {
-  image: url("images/checkbox_checked_disabled.png");
+  image: url("component/images/checkbox_checked_disabled.png");
 }
 QCheckBox::indicator:indeterminate {
-  image: url("images/checkbox_indeterminate.png");
+  image: url("component/images/checkbox_indeterminate.png");
 }
 QCheckBox::indicator:indeterminate:disabled {
-  image: url("images/checkbox_indeterminate_disabled.png");
+  image: url("component/images/checkbox_indeterminate_disabled.png");
 }
 QCheckBox::indicator:indeterminate:focus, QCheckBox::indicator:indeterminate:hover, QCheckBox::indicator:indeterminate:pressed {
-  image: url("images/checkbox_indeterminate_focus.png");
+  image: url("component/images/checkbox_indeterminate_focus.png");
 }
 
 QTextEdit {
@@ -99,7 +99,7 @@ QComboBox::drop-down {
   border-bottom-right-radius: 3px;
 }
 QComboBox::down-arrow {
-  image: url("images/arrow_down.png");
+  image: url("component/images/arrow_down.png");
 }
 QComboBox::down-arrow:on {
   top: 1px;
@@ -188,16 +188,16 @@ QMenu::item:hover { /* when user selects item using mouse or keyboard */
 	border: 2px solid rgb(61, 70, 86);
 }
 QMenu::indicator {
-    image: url(images/transparent.png);
+    image: url(component/images/transparent.png);
     width: 0px;
     height: 0px;
 }
 
 QMenu::item:checked { /* when user selects item using mouse or keyboard */
-  image: url(images/transparent.png);
+  image: url(component/images/transparent.png);
   background-color: rgb(57, 65, 80);
 	border: 2px solid rgb(61, 70, 86);
-  background-image: url(images/cil-check-alt.png);
+  background-image: url(component/images/cil-check-alt.png);
   background-repeat: no-repeat;
   background-position: center left;   
 }
@@ -242,10 +242,10 @@ QSpinBox:hover { border: 2px solid rgb(64, 71, 88);}
 QSpinBox:focus { border: 2px solid rgb(91, 101, 124);}
 QSpinBox::up-button {border-top-right-radius: 3px;}
 QSpinBox::down-button {border-bottom-right-radius: 3px;}
-QSpinBox::up-arrow { image: url(images/cil-arrow-up.png); width: 10px; height: 10px;}
-QSpinBox::down-arrow { image: url(images/cil-arrow-bottom.png); width: 10px; height: 10px;}
-QSpinBox::up-arrow:disabled { image: url(images/transparent.png); width: 10px; height: 10px;}
-QSpinBox::down-arrow:disabled { image: url(images/transparent.png); width: 10px; height: 10px;}
+QSpinBox::up-arrow { image: url(component/images/cil-arrow-up.png); width: 10px; height: 10px;}
+QSpinBox::down-arrow { image: url(component/images/cil-arrow-bottom.png); width: 10px; height: 10px;}
+QSpinBox::up-arrow:disabled { image: url(component/images/transparent.png); width: 10px; height: 10px;}
+QSpinBox::down-arrow:disabled { image: url(component/images/transparent.png); width: 10px; height: 10px;}
 
 
 QListWidget {
@@ -276,28 +276,28 @@ QPushButton:pressed { background-color: rgb(23, 26, 30); border-style: solid; bo
 
 SettingsButton = MenuButton + """
 QPushButton::menu-indicator{ image: none;}
-QPushButton { qproperty-icon: url(images/cil-settings.png); qproperty-iconSize: 40px 40px;}
+QPushButton { qproperty-icon: url(component/images/cil-settings.png); qproperty-iconSize: 40px 40px;}
 """
 
 MapButton = MenuButton + """
-QPushButton { qproperty-icon: url(images/cil-map.png); qproperty-iconSize: 40px 40px;}
+QPushButton { qproperty-icon: url(component/images/cil-map.png); qproperty-iconSize: 40px 40px;}
 """
 
 MinButton = MenuButton + """
-QPushButton { qproperty-icon: url(images/icon_minimize.png); qproperty-iconSize: 40px 40px;}
+QPushButton { qproperty-icon: url(component/images/icon_minimize.png); qproperty-iconSize: 40px 40px;}
 """
 
 CloseButton = MenuButton + """
-QPushButton { qproperty-icon: url(images/icon_close.png); qproperty-iconSize: 40px 40px;}
+QPushButton { qproperty-icon: url(component/images/icon_close.png); qproperty-iconSize: 40px 40px;}
 """
 
 analyticlogo = MenuButton + """
 QPushButton:hover { background-color: rgba(255, 255, 255, 0); border: none;  border-radius: 5px;}
-QPushButton { qproperty-icon: url(images/Logo_ICBT_Analytik_round.png); qproperty-iconSize: 40px 40px; }
+QPushButton { qproperty-icon: url(component/images/Logo_ICBT_Analytik_round.png); qproperty-iconSize: 40px 40px; }
 """
 
 DirectoryButton = """
-qproperty-icon: url(images/cil-folder-open.png);
+qproperty-icon: url(component/images/cil-folder-open.png);
 """ 
 
 HoverGreenButton = """
