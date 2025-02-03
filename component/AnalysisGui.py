@@ -200,35 +200,39 @@ class PCAWindow(QDialog):
         ResultLayout.addWidget(self.score_yaxis_dropdown, 1, 1, 1, 1)
 
         self.score_plot_button = QPushButton('Display Scores', self)
-        ResultLayout.addWidget(self.score_plot_button, 2, 1, 1, 1)
+        ResultLayout.addWidget(self.score_plot_button, 0, 2, 2, 1)
         self.score_plot_button.clicked.connect(self.display_scores)
 
 
         # add elements for loadings plot
+        self.label = QLabel('Component Loadings:', self)
+        ResultLayout.addWidget(self.label, 2, 0, 1, 1)
         self.loadings_compound_dropdown = QComboBox(self)
         # add item for each principal component
         self.loadings_compound_dropdown.addItems([f'Component {i+1}' for i in range(int(self.number_PC))])
-        ResultLayout.addWidget(self.loadings_compound_dropdown, 4, 1, 1, 1)
+        ResultLayout.addWidget(self.loadings_compound_dropdown, 2, 1, 1, 1)
 
         # add a button to display the loadings of the selected component
         self.loadings_button = QPushButton('Display Loadings', self)
-        ResultLayout.addWidget(self.loadings_button, 5, 1, 1, 1)
+        ResultLayout.addWidget(self.loadings_button, 2, 2, 1, 1)
         self.loadings_button.clicked.connect(self.display_loadings)
 
 
         #### Test selection of files for crossref
+        self.label = QLabel('Select Files for Crossref:', self)
+        ResultLayout.addWidget(self.label, 3, 0, 1, 2)
         self.crossref_button = QPushButton('Crossref Files', self)
-        ResultLayout.addWidget(self.crossref_button, 6, 1, 1, 1)
+        ResultLayout.addWidget(self.crossref_button, 3, 2, 1, 1)
         self.crossref_button.clicked.connect(self.crossref_files)
 
 
 
         # add elements for Saving the results
         self.result_label = QLabel('Path to results', self)
-        ResultLayout.addWidget(self.result_label)
+        ResultLayout.addWidget(self.result_label, 4, 0, 1, 1)
 
         self.save_button = QPushButton('Save', self)
-        ResultLayout.addWidget(self.save_button)
+        ResultLayout.addWidget(self.save_button, 4, 2, 1, 1)
 
         ResultGroupBox.setLayout(ResultLayout)
         layout.addWidget(ResultGroupBox, 1, 1, 1, 1)
