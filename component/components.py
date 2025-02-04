@@ -41,20 +41,6 @@ class CheckableComboBox(QComboBox):
         else: 
             item.setCheckState(Qt.Checked)
         self.action.trigger(item.text(), item.checkState() == Qt.Checked)
-#=========================================================================================================
-class RightPushButton(QPushButton):
-    """
-    QPushbutton with additional function on right click
-    adapted from stackoverflow.com/questions/44264157
-    """
-    def __init__(self, parent: QLayout) -> None:
-        super(RightPushButton, self).__init__()
-        self.parent = parent
-
-    def mousePressEvent(self, QMouseEvent: QEvent) -> None:
-        """If rightclicked, call rightClickedEvent function from InteractionGUI"""
-        if QMouseEvent.button() == Qt.RightButton:
-            self.parent.parent.rightClickedEvent()
        
 #=========================================================================================================       
 class MyBar(QWidget):
