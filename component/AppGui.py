@@ -26,25 +26,6 @@ from .groupmaker import GroupMaker
 import uuid
 import logging
 
-def resource_path(relative_path):
-    """Return the absolute path to a resource, works for dev and for PyInstaller."""
-    try:
-        base_path = sys._MEIPASS  # When frozen by PyInstaller
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
-def update_stylesheet_paths(stylesheet):
-    """Update stylesheet image URLs to absolute paths with file:/// prefix."""
-    return re.sub(
-        r'url\("images/([^"]+)"\)',
-        lambda m: 'url("file:///{0}")'.format(
-            resource_path(os.path.join("images", m.group(1))).replace("\\", "/")
-        ),
-        stylesheet
-    )
-
-
 
 
 class MainWindow(QWidget):
@@ -62,8 +43,7 @@ class MainWindow(QWidget):
         self.setWindowIcon(app_icon)
 
         # Layout
-        updated_styles = update_stylesheet_paths(styles.Levin)
-        self.setStyleSheet(updated_styles)
+        self.setStyleSheet(styles.Levin)
         self.setMinimumSize(900, 1200)
         self.setWindowFlags(Qt.FramelessWindowHint)
 
@@ -217,6 +197,8 @@ class MainWindow(QWidget):
 
         if folder_path:
             self.selected_folder = folder_path
+            os.makedirs(os.path.join(self.selected_folder, 'meta'), exist_ok=True)
+            os.makedirs(os.path.join(self.selected_folder, 'output'), exist_ok=True)
             # Configure logging
             logging.basicConfig(filename=os.path.join(self.selected_folder,'meta', f'logs_{self.run_id}.log'), level=logging.INFO, format='%(asctime)s - %(message)s')
             self.print_to_output(f'Gewählter Ordner: {folder_path}')

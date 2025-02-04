@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (QDialog, QLabel, QLineEdit, QPushButton,
                              QCheckBox, QComboBox,QGridLayout, QGroupBox,
                              QMessageBox, QToolTip)
 
-from PyQt5.QtGui import QCursor
+from PyQt5.QtGui import QCursor, QPixmap
 
 import sys 
 import os
@@ -37,11 +37,12 @@ class PCAWindow(QDialog):
         self.run_id = str(uuid.uuid4())
 
         # Configure logging
-        logging.basicConfig(filename='./component/output/output.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+        logging.basicConfig(filename=os.path.join(parent.selected_folder,'meta', f'logs_{parent.run_id}.log'), level=logging.INFO, format='%(asctime)s - %(message)s')
 
         # Log the start of the program with the unique identifier
-        logging.info(f"Program started with run ID: {self.run_id}")
+        logging.info(f"Analysis Program started with run ID: {self.run_id}")
 
+        self.parent = parent
 
         #=========================================================================================================
         ### Add Groupbox for the files
@@ -171,6 +172,7 @@ class PCAWindow(QDialog):
         self.plot_graph_right = pg.PlotWidget()
         graph_style_chromatogram(self.plot_graph_right)
         PlotLayout.addWidget(self.plot_graph_right, 0, 1, 1, 1)
+        
 
         
         PlotGroupBox.setLayout(PlotLayout)
@@ -233,6 +235,7 @@ class PCAWindow(QDialog):
 
         self.save_button = QPushButton('Save', self)
         ResultLayout.addWidget(self.save_button, 4, 2, 1, 1)
+        self.save_button.clicked.connect(self.save_results)
 
         ResultGroupBox.setLayout(ResultLayout)
         layout.addWidget(ResultGroupBox, 1, 1, 1, 1)
@@ -461,6 +464,31 @@ class PCAWindow(QDialog):
         # load the first component of the loadings
         self.display_loadings()
 
+    def save_results(self):
+        # make a new folder in the output folder with the current date and time
+        output_folder = os.path.join(self.parent.selected_folder,'output', f'results_{self.parent.run_id}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}')
+        os.makedirs(output_folder, exist_ok=True)
+
+        # save the results as npy files
+        np.save(os.path.join(output_folder, 'scores.npy'), self.results['scores'])
+        np.save(os.path.join(output_folder, 'loadings.npy'), self.results['loadings'])
+        np.save(os.path.join(output_folder, 'explained_variance.npy'), self.results['explained_variance'])
+
+        # save the settings as txt file
+        with open(os.path.join(output_folder, 'settings.txt'), 'w') as f:
+            f.write(f'Number of PC: {self.number_PC}\n')
+            f.write(f'Method: {self.method}\n')
+            f.write(f'Scaler: {self.scaler}\n')
+            f.write(f'Data from: {self.data_from}\n')
+            f.write(f'Chromatogram Dimension: {self.chrom_dim}\n')
+            f.write(f'Selected Files: {self.selected_files}\n')
+
+        # save the current plot as png file using widget screenshot
+        self.plot_graph_right.grab().save(os.path.join(output_folder, 'explained_variance.png'))
+        self.plot_graph_left.grab().save(os.path.join(output_folder, 'scores.png'))
+        self.loadings_plot.grab().save(os.path.join(output_folder, 'loadings.png'))
+        # Log the saving of the results
+        logging.info(f"Results saved in Run: {self.run_id} to {output_folder}")
         
 
 
