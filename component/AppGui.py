@@ -29,21 +29,30 @@ import logging
 
 
 class MainWindow(QWidget):
-    def __init__(self):
+    def __init__(self, base_path: str) -> None:
         super().__init__()
         self.chromatograms = dict()
         self.run_id = uuid.uuid4()
+
+        # Prüfe, ob das Programm als "gefroren" (kompiliert) läuft.
+        
+        # Nun den Pfad zu Deinem eingebundenen Ordner (wie in --include-data-dir angegeben)
+        icon_path = os.path.join(base_path, "component", "images")
+        icon_path_qt = icon_path.replace("\\", "/")
         
         
         # Set window title and size
         self.setWindowTitle('GC-MS Warping Tool')
         # Set the window icon
-        icon_path = os.path.join(os.path.dirname(__file__), 'images', 'Logo_ICBT_Analytik_round.ico')
-        app_icon = QIcon(icon_path)
+        exe_icon_path =os.path.join(icon_path,"Logo_ICBT_Analytik_round.ico")
+        #icon_path = os.path.join(os.path.dirname(__file__), 'images', 'Logo_ICBT_Analytik_round.ico')
+        app_icon = QIcon(exe_icon_path)
         self.setWindowIcon(app_icon)
 
         # Layout
-        self.setStyleSheet(styles.Levin)
+        styles_modified = styles.Levin.replace("component/images/", icon_path_qt + "/")
+        self.setStyleSheet(styles_modified)
+        #self.setStyleSheet(styles.Levin)
         self.setMinimumSize(900, 1200)
         self.setWindowFlags(Qt.FramelessWindowHint)
 

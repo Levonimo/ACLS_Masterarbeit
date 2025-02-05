@@ -230,12 +230,13 @@ class PCAWindow(QDialog):
 
 
         # add elements for Saving the results
-        self.result_label = QLabel('Path to results', self)
-        ResultLayout.addWidget(self.result_label, 4, 0, 1, 1)
+        self.save_button = QPushButton('Save Plots', self)
+        ResultLayout.addWidget(self.save_button, 4, 1, 1, 1)
+        self.save_button.clicked.connect(self.save_plots)
 
-        self.save_button = QPushButton('Save', self)
+        self.save_button = QPushButton('Save all', self)
         ResultLayout.addWidget(self.save_button, 4, 2, 1, 1)
-        self.save_button.clicked.connect(self.save_results)
+        self.save_button.clicked.connect(self.save_all_results)
 
         ResultGroupBox.setLayout(ResultLayout)
         layout.addWidget(ResultGroupBox, 1, 1, 1, 1)
@@ -464,7 +465,7 @@ class PCAWindow(QDialog):
         # load the first component of the loadings
         self.display_loadings()
 
-    def save_results(self):
+    def save_all_results(self):
         # make a new folder in the output folder with the current date and time
         output_folder = os.path.join(self.parent.selected_folder,'output', f'results_{self.parent.run_id}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}')
         os.makedirs(output_folder, exist_ok=True)
@@ -489,7 +490,18 @@ class PCAWindow(QDialog):
         self.loadings_plot.grab().save(os.path.join(output_folder, 'loadings.png'))
         # Log the saving of the results
         logging.info(f"Results saved in Run: {self.run_id} to {output_folder}")
-        
+
+    def save_plots(self): 
+        output_folder = os.path.join(self.parent.selected_folder,'output', f'results_{self.parent.run_id}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}')
+        os.makedirs(output_folder, exist_ok=True)
+
+        # save the current plot as png file using widget screenshot
+        self.plot_graph_right.grab().save(os.path.join(output_folder, 'explained_variance.png'))
+        self.plot_graph_left.grab().save(os.path.join(output_folder, 'scores.png'))
+        self.loadings_plot.grab().save(os.path.join(output_folder, 'loadings.png'))
+        # Log the saving of the results
+        logging.info(f"Results saved in Run: {self.run_id} to {output_folder}")
+  
 
 
     def display_loadings(self):

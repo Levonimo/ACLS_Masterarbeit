@@ -21,12 +21,7 @@ __email__       = "levinwilli@protonmail.ch"
 import os
 import sys
 import subprocess
-from PyQt5.QtWidgets import QApplication, QMessageBox
-
-
-# add betplip path to directory 
-sys.path.insert(1, os.path.dirname(__file__))
-
+from PyQt5.QtWidgets import QApplication
 from component import MainWindow
 
 # Function to check if MSConvert.exe is in the PATH
@@ -37,26 +32,26 @@ def check_msconvert():
         return False
     return True
 
-# set openms_data_path 
-if 'OPENMS_DATA_PATH' not in os.environ:
+# Set openms_data_path and base_path
+if getattr(sys, "frozen", False):
+    try:
+        base_path = __compiled_dir__
+    except NameError:
+        base_path = os.path.dirname(sys.executable)
+else:
     base_path = os.path.dirname(os.path.abspath(__file__))
+
+if 'OPENMS_DATA_PATH' not in os.environ:
     potential_path = os.path.join(base_path, 'openms_data')
     if os.path.isdir(potential_path):
         os.environ['OPENMS_DATA_PATH'] = potential_path
 
-
 # global reference to avoid garbage collection of our dialog
 dialog = None
 
-# show application window by running betaplip.py (developing purpose)
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    
-    if not check_msconvert():
-        QMessageBox.critical(None, "Error", "MSConvert.exe is not installed or not in the PATH. The program will now close.")
-        sys.exit(1)
-    
-    print("MAIN")
-    wnd = MainWindow()
-    wnd.show()
+    # Pass base_path to your MainWindow constructor.
+    window = MainWindow(base_path)
+    window.show()
     sys.exit(app.exec_())
