@@ -37,6 +37,14 @@ def check_msconvert():
         return False
     return True
 
+# set openms_data_path 
+if 'OPENMS_DATA_PATH' not in os.environ:
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    potential_path = os.path.join(base_path, 'openms_data')
+    if os.path.isdir(potential_path):
+        os.environ['OPENMS_DATA_PATH'] = potential_path
+
+
 # global reference to avoid garbage collection of our dialog
 dialog = None
 
