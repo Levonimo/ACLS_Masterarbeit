@@ -16,3 +16,8 @@ SideProject/Data/*
 dist/*
 build/*
 *.spec
+
+WARP.dist/*
+WARP.build/*
+WARP.onefile-build/*
+*.exe
