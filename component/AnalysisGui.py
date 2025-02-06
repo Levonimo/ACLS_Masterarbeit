@@ -12,6 +12,7 @@ from .styles_pyqtgraph import graph_style_chromatogram
 import pyqtgraph as pg
 from .groupmaker import GroupMaker
 from .components import CheckableComboBox
+from .functions import assign_colors
 import numpy as np
 from copy import copy
 
@@ -285,7 +286,6 @@ class PCAWindow(QDialog):
 
 
         # cut out a m/z values
-
         self.label_mz = QLabel('m/z values:', self)
         self.label_mz.setToolTip('Enter m/z values separated by commas, range can be defined with a dash.')
         SpecialLayout.addWidget(self.label_mz, 2, 0, 1, 1)
@@ -296,6 +296,8 @@ class PCAWindow(QDialog):
         self.cut_by_mz_button = QPushButton('Cut Chromatogram by m/z', self)
         SpecialLayout.addWidget(self.cut_by_mz_button, 2, 3, 1, 1) 
         self.cut_by_mz_button.clicked.connect(self.cut_chromatogram_by_mz)
+
+        # add input field for comment and 
 
 
         SpecialGroupBox.setLayout(SpecialLayout)
@@ -321,7 +323,11 @@ class PCAWindow(QDialog):
         # Colors by file name endings
         # load groups 
         self.groups = np.load(os.path.join(parent.selected_folder,'meta', 'groups.npy'), allow_pickle=True)
-        
+        group_for_color = self.groups[0]
+        colors = assign_colors(group_for_color)
+        parent.print_to_output(colors)
+        self.colors = colors
+        '''
         # for the sake of this project if one group contains ('SOO', 'SOL', 'SGO', 'SGL', 'OOO', 'FFF') the color are the following
         self.colors = {
             'SOO': (255, 0, 0, 255), # light red
@@ -331,7 +337,7 @@ class PCAWindow(QDialog):
             'OOO': (0, 0, 255, 255), # light blue
             'FFF': (0, 0, 139, 255) # dark blue
         }
-        
+        '''
     #=========================================================================================================
     #=========================================================================================================
     # Functions for the checkboxes
@@ -422,7 +428,9 @@ class PCAWindow(QDialog):
             'NumberPC': self.number_PC,
             'scores': scores,
             'loadings': loadings,
-            'explained_variance': explained_variance
+            'explained_variance': explained_variance,
+            'retenion_time': self.rt,
+            'mz_values': self.mz_list
         }
         
         # The result should be displayed in the result placeholder

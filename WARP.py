@@ -35,7 +35,7 @@ def check_msconvert():
 # Set openms_data_path and base_path
 if getattr(sys, "frozen", False):
     try:
-        base_path = __compiled_dir__
+        base_path = __compiled_dir__ # type: ignore
     except NameError:
         base_path = os.path.dirname(sys.executable)
 else:
