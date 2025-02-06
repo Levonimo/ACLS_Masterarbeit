@@ -23,7 +23,7 @@ class NormalGUI(QWidget):
             # mz from range 
             mz_list = np.round(np.arange(35, 400.1, 1), 1)
             
-            
+            self.run_id = 1
             
             # Example usage of PCAWindow
             pca_window = PCAWindow(targets, warped, unwarped ,rt, mz_list, parent = self)

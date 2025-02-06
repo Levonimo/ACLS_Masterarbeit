@@ -34,9 +34,7 @@ class MainWindow(QWidget):
         self.chromatograms = dict()
         self.run_id = uuid.uuid4()
 
-        # Prüfe, ob das Programm als "gefroren" (kompiliert) läuft.
-        
-        # Nun den Pfad zu Deinem eingebundenen Ordner (wie in --include-data-dir angegeben)
+        # Set the icon path
         icon_path = os.path.join(base_path, "component", "images")
         icon_path_qt = icon_path.replace("\\", "/")
         
@@ -56,7 +54,7 @@ class MainWindow(QWidget):
         self.setMinimumSize(900, 1200)
         self.setWindowFlags(Qt.FramelessWindowHint)
 
-        # Hauptlayout - ein Gitterlayout
+        # Layout
         MainWindow = QGridLayout()
         self.setLayout(MainWindow)
 
@@ -234,6 +232,12 @@ class MainWindow(QWidget):
             self.print_to_output(f'Groups: {Groups}')
             # save groups to file in folder self.selected_folder + meta
             np.save(os.path.join(self.selected_folder, 'meta', 'Groups.npy'), Groups)
+            # save addtionally as txt file for better readability
+            with open(os.path.join(self.selected_folder, 'meta', 'Groups.txt'), 'w') as f:
+                for _, value in Groups.items():
+                    for item in value:
+                        f.write(f'{item} ')
+                    f.write('\n')
           
 
 

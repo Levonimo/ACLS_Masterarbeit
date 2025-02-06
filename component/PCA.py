@@ -2,6 +2,7 @@
 #
 # Load libraries
 from sklearn.decomposition import PCA
+#from sklearn.decomposition import SparsePCA
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler, RobustScaler
 import numpy as np
 
@@ -61,6 +62,8 @@ def perform_pca(data: dict, n_components: int, scaler_name: str, method_name: st
     
     # Perform PCA
     pca = PCA(n_components=n_components, svd_solver=get_method(method_name))
+    # pca = SparsePCA(n_components=n_components)
+
     pca.fit(data_points)
 
     # Loadings
@@ -80,5 +83,6 @@ def perform_pca(data: dict, n_components: int, scaler_name: str, method_name: st
 
     # Explained variance
     explained_variance = pca.explained_variance_ratio_
+    #explained_variance = [0.5,0.2,0.1,0.05,0.03]
 
     return scores, loadings, explained_variance
