@@ -5,9 +5,9 @@ import numpy as np
 from copy import copy
 import matplotlib.pyplot as plt
 
-from . import master_class as mc
+from . import fun_DataPrep as mc
 from . import styles
-from .Warping import correlation_optimized_warping as COW
+from .fun_Warping import correlation_optimized_warping as COW
 from .styles_pyqtgraph import graph_style_chromatogram
 
 from PyQt5.QtWidgets import (QWidget, QPushButton,
@@ -18,10 +18,11 @@ from PyQt5.QtCore import Qt
 
 import pyqtgraph as pg
 
-from .ExternalGui import InputDialog, FileSelectionWindow, WarpingSelectionWindow
-from .AnalysisGui import PCAWindow
-from .components import MyBar
-from .groupmaker import GroupMaker
+from .GUI_Selection import InputDialog, FileSelectionWindow, WarpingSelectionWindow
+from .GUI_Analysis import PCAWindow
+from .GUI_components import MyBar
+from .fun_Groupmaker import GroupMaker
+from .functions import SaveGroups
 
 import uuid
 import logging
@@ -227,17 +228,14 @@ class MainWindow(QWidget):
             
             #np.save('./Outputs/retention_time.npy', self.rt)
 
-            Groups, _ = GroupMaker(self.data_preparation.get_file_names())
+            self.Groups, self.filename_parts = GroupMaker(self.data_preparation.get_file_names())
             self.print_to_output('Groups created.')
-            self.print_to_output(f'Groups: {Groups}')
+            self.print_to_output(f'Groups: {self.Groups}')
             # save groups to file in folder self.selected_folder + meta
-            np.save(os.path.join(self.selected_folder, 'meta', 'Groups.npy'), Groups)
+            # np.save(os.path.join(self.selected_folder, 'meta', 'Groups.npy'), Groups)
             # save addtionally as txt file for better readability
-            with open(os.path.join(self.selected_folder, 'meta', 'Groups.txt'), 'w') as f:
-                for _, value in Groups.items():
-                    for item in value:
-                        f.write(f'{item} ')
-                    f.write('\n')
+
+            SaveGroups(self.Groups, self.selected_folder)
           
 
 
@@ -396,18 +394,14 @@ class MainWindow(QWidget):
     def TestResults(self) -> None:
         # select on which group the test should be performed
         # get the group names from the meta folder
-        Groups = os.path.join(self.selected_folder, 'meta', 'Groups.npy')
-        
-        if os.path.exists(Groups):
-            Group_dict = np.load(Groups, allow_pickle=True).item()
-            Group_item = [':'.join([number, ' | '.join(group)]) for number, group in zip(Group_dict.keys(), Group_dict.values())]
-            dialog = FileSelectionWindow(Group_item, parent = self)
-            if dialog.exec_():
-                selected_group = dialog.selected_file
-                self.print_to_output(f'Selected Group: {selected_group}')
-            else:
-                self.print_to_output('Please select a group.')
-                return
+        Group_item = [':'.join([number, ' | '.join(group)]) for number, group in zip(self.Groups.keys(), self.Groups.values())]
+        dialog = FileSelectionWindow(Group_item, parent = self)
+        if dialog.exec_():
+            selected_group = dialog.selected_file
+            self.print_to_output(f'Selected Group: {selected_group}')
+        else:
+            self.print_to_output('Please select a group.')
+            return
 
 
             # test the results on the selected group for normal distribution and homoscedasticity

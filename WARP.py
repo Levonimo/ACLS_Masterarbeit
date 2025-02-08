@@ -27,7 +27,7 @@ from component import MainWindow
 # Function to check if MSConvert.exe is in the PATH
 def check_msconvert():
     try:
-        subprocess.run("msconvert", check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run("msconvert.exe", check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
     return True
@@ -50,6 +50,10 @@ if 'OPENMS_DATA_PATH' not in os.environ:
 dialog = None
 
 if __name__ == "__main__":
+    # Check if MSConvert is in the PATH
+    if not check_msconvert():
+        print("MSConvert not found in PATH. Please install ProteoWizard and add Folder to PATH.")
+        sys.exit(1)
     app = QApplication(sys.argv)
     # Pass base_path to your MainWindow constructor.
     window = MainWindow(base_path)
