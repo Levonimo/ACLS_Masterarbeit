@@ -6,12 +6,12 @@ from PyQt5.QtGui import QCursor, QPixmap
 
 import sys 
 import os
-from .ExternalGui import CrossrefFileSelectionWindow
-from .PCA import perform_pca
+from .GUI_Selection import CrossrefFileSelectionWindow, GroupSelectionWindow
+from .fun_PCA import perform_pca
 from .styles_pyqtgraph import graph_style_chromatogram
 import pyqtgraph as pg
-from .groupmaker import GroupMaker
-from .components import CheckableComboBox
+from .fun_Groupmaker import GroupMaker
+from .GUI_components import CheckableComboBox
 from .functions import assign_colors
 import numpy as np
 from copy import copy
@@ -80,6 +80,7 @@ class PCAWindow(QDialog):
             group_dropdown = CheckableComboBox(self.checkbox_action(self, key, filename_parts), self)
             group_dropdown.addItems(Groups[key])
             fileGroupboxLayout.addWidget(group_dropdown, 2+i, col+1, 1, 1)
+
 
 
 
@@ -265,9 +266,14 @@ class PCAWindow(QDialog):
         SpecialGroupBox = QGroupBox("Special Functions", self)
         SpecialLayout = QGridLayout(SpecialGroupBox)
 
+        # add Button for select Group for coloring
+        self.select_coloring_button = QPushButton('Select Coloring', self)
+        SpecialLayout.addWidget(self.select_coloring_button, 0, 2, 1, 1)
+        self.select_coloring_button.clicked.connect(self.select_coloring)
+
         # add Button for show Varianze of Horns Parallel Analysis
         self.horn_button = QPushButton('Horns Parallel Analysis', self)
-        SpecialLayout.addWidget(self.horn_button, 0, 0, 1, 1)
+        SpecialLayout.addWidget(self.horn_button, 0, 3, 1, 1)
         self.horn_button.clicked.connect(self.horn_parallel_analysis)
 
         # add two input field for Retention Time values and a execute button to cut out a specific range of the chromatogram
@@ -322,12 +328,20 @@ class PCAWindow(QDialog):
         #=========================================================================================================
         # Colors by file name endings
         # load groups 
-        self.groups = np.load(os.path.join(parent.selected_folder,'meta', 'groups.npy'), allow_pickle=True)
-        group_for_color = self.groups[0]
-        colors = assign_colors(group_for_color)
-        parent.print_to_output(colors)
-        self.colors = colors
+        parent.print_to_output(f'{parent.Groups.values()}')
+        self.group_for_color = list(parent.Groups.values())[0]
+        parent.print_to_output(f'{self.group_for_color}')
+        self.colors = assign_colors(self.group_for_color)
+        parent.print_to_output(f'{self.colors}')
+        
+        
         '''
+        dict_values([{'B1', 'C1', 'A1'}, {'6', '4', '2', '3', '0', '1', '5'}, {'SOL', 'OOO', 'SGL', 'SOO', 'SGO', 'FFF'}])
+        {'B1', 'C1', 'A1'}
+        {'B1': '#F20C0C', 'C1': '#0CF20C', 'A1': '#0C0CF2'}
+
+
+
         # for the sake of this project if one group contains ('SOO', 'SOL', 'SGO', 'SGL', 'OOO', 'FFF') the color are the following
         self.colors = {
             'SOO': (255, 0, 0, 255), # light red
@@ -541,7 +555,11 @@ class PCAWindow(QDialog):
 
         scatter_data = []
         for sample in self.selected_files:
-            color = self.colors[sample[-3:]]
+            # check and select which of the groupelement is in the sample name
+            for i in self.group_for_color:
+                if i in sample:
+                    color = self.colors[i]
+                    break
             scatter_data.append({'pos': (scores[sample][xaxis], scores[sample][yaxis]), 'data': sample, 'brush': pg.mkBrush(color)})
 
         scatter_plot = pg.ScatterPlotItem(size=10, pen=None, pxMode=True)
@@ -551,15 +569,14 @@ class PCAWindow(QDialog):
         self.plot_graph_left.setLabel('bottom', f'Component {xaxis+1}')
         self.plot_graph_left.setLabel('left', f'Component {yaxis+1}')
 
-        # get all unique file endings
-        unique_endings = list(set([file_name[-3:] for file_name in self.selected_files]))
+        
         # add legend of all unique file endings
         legend = self.plot_graph_left.addLegend()
         legend.clear()
         legend.setOffset((10, 10))  # Adjust the position of the legend if needed
 
-        for ending in unique_endings:
-            legend.addItem(pg.ScatterPlotItem(pen=None, brush=self.colors[ending], size=10), f'{ending}')
+        for element in self.group_for_color:
+            legend.addItem(pg.ScatterPlotItem(pen=None, brush=self.colors[element], size=10), f'{element}')
 
         def on_click(plot, points):
             for point in points:
@@ -600,6 +617,14 @@ class PCAWindow(QDialog):
 
     #=========================================================================================================
     # Special Functions
+
+    def select_coloring(self):
+        # open a new window with the group selection
+        dialog = GroupSelectionWindow(list(self.parent.Groups.values()), parent = self)
+        if dialog.exec_():
+            self.group_for_color = dialog.selected_group
+            self.colors = assign_colors(self.group_for_color)
+
 
     def horn_parallel_analysis(self):
         '''

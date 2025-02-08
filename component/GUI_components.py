@@ -2,9 +2,7 @@
 Components of the Graphical user interface
     (Personalized PyQt objects)
 
-adapted from David Patsch's AlphaDock and Nicola Imstepf's Master Thesis 
-- RightPushButton
-- MyBar
+MyBar is adapted from David Patsch's AlphaDock and Nicola Imstepf's Master Thesis.
 
 components.py
 """

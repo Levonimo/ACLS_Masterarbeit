@@ -1,7 +1,7 @@
 import sys
 import os
 from PyQt5.QtWidgets import QApplication, QWidget
-from component.AnalysisGui import PCAWindow
+from component.GUI_Analysis import PCAWindow
 import numpy as np
 
 sys.path.insert(1, os.path.dirname(__file__))

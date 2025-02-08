@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, 
                              QListWidget, QCheckBox, QGridLayout, QGroupBox)
 
-from .groupmaker import GroupMaker
-from .components import CheckableComboBox
+from .fun_Groupmaker import GroupMaker
+from .GUI_components import CheckableComboBox
 
 from . import styles
 
@@ -193,3 +193,39 @@ class CrossrefFileSelectionWindow(QDialog):
             for file_name, parts in self.filename_parts.items():
                 if parts[self.group_index] == item_text:
                     self.parent.checkbox_dict[file_name].setChecked(checked)
+
+# =========================================================================================================
+# Group Selection Window
+# =========================================================================================================
+
+class GroupSelectionWindow(QDialog):
+    def __init__(self, groups, parent):
+        super().__init__(parent)
+        self.setWindowTitle('Select a Group')
+        self.setGeometry(150, 150, 400, 300)
+
+        layout = QVBoxLayout()
+
+        # Layout
+        self.setStyleSheet(styles.Levin)
+
+        self.list_widget = QListWidget()
+        self.groups = groups
+        self.group_strings = [str(group) for group in groups]
+        self.list_widget.addItems(self.group_strings)
+        self.list_widget.itemDoubleClicked.connect(self.select_group)
+        layout.addWidget(self.list_widget)
+
+        self.select_button = QPushButton('Select')
+        self.select_button.clicked.connect(self.select_group)
+        layout.addWidget(self.select_button)
+
+        self.setLayout(layout)
+        self.selected_group = None
+
+    def select_group(self):
+        selected_items = self.list_widget.selectedItems()
+        if selected_items:
+            selected_group_str = selected_items[0].text()
+            self.selected_group = self.groups[self.group_strings.index(selected_group_str)]
+            self.accept()

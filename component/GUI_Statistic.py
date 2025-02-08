@@ -6,12 +6,12 @@ from PyQt5.QtGui import QCursor, QPixmap
 
 import sys 
 import os
-from .ExternalGui import CrossrefFileSelectionWindow
-from .PCA import perform_pca
+from .GUI_Selection import CrossrefFileSelectionWindow
+from .fun_PCA import perform_pca
 from .styles_pyqtgraph import graph_style_chromatogram
 import pyqtgraph as pg
-from .groupmaker import GroupMaker
-from .components import CheckableComboBox
+from .fun_Groupmaker import GroupMaker
+from .GUI_components import CheckableComboBox
 import numpy as np
 from copy import copy
 
