@@ -328,11 +328,11 @@ class PCAWindow(QDialog):
         #=========================================================================================================
         # Colors by file name endings
         # load groups 
-        parent.print_to_output(f'{parent.Groups.values()}')
+        # parent.print_to_output(f'{parent.Groups.values()}')
         self.group_for_color = list(parent.Groups.values())[0]
-        parent.print_to_output(f'{self.group_for_color}')
+        # parent.print_to_output(f'{self.group_for_color}')
         self.colors = assign_colors(self.group_for_color)
-        parent.print_to_output(f'{self.colors}')
+        # parent.print_to_output(f'{self.colors}')
         
         
         '''

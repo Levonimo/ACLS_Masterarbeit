@@ -1,14 +1,8 @@
 import sys
 import os
-import re
-import numpy as np
 from copy import copy
-import matplotlib.pyplot as plt
-
-from . import fun_DataPrep as mc
-from . import styles
-from .fun_Warping import correlation_optimized_warping as COW
-from .styles_pyqtgraph import graph_style_chromatogram
+import uuid
+import logging
 
 from PyQt5.QtWidgets import (QWidget, QPushButton,
                               QFileDialog, QLabel, QTextEdit,  
@@ -17,15 +11,20 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 
 import pyqtgraph as pg
+import numpy as np
 
+from . import fun_DataPrep as mc
+from . import styles
+from .fun_Warping import correlation_optimized_warping as COW
+from .styles_pyqtgraph import graph_style_chromatogram
 from .GUI_Selection import InputDialog, FileSelectionWindow, WarpingSelectionWindow
 from .GUI_Analysis import PCAWindow
+from .GUI_Statistic import StatisticalWindow
 from .GUI_components import MyBar
 from .fun_Groupmaker import GroupMaker
 from .functions import SaveGroups
 
-import uuid
-import logging
+
 
 
 
@@ -104,10 +103,10 @@ class MainWindow(QWidget):
         InputLayout.addWidget(self.btn_analyse, 6, 0)
 
 
-        self.btn_testResults = QPushButton('Statistic Results', self)
-        self.btn_testResults.clicked.connect(self.TestResults)
-        #self.btn_testResults.setEnabled(False)
-        InputLayout.addWidget(self.btn_testResults, 7, 0)
+        self.btn_StatisticResults = QPushButton('Statistic Results', self)
+        self.btn_StatisticResults.clicked.connect(self.StatisticResults)
+        #self.btn_StatisticResults.setEnabled(False)
+        InputLayout.addWidget(self.btn_StatisticResults, 7, 0)
 
 
         # Textfeld in die erste Reihe, zweite Spalte
@@ -385,33 +384,17 @@ class MainWindow(QWidget):
         dialog = PCAWindow(self.selected_target, self.warped_chromatograms, self.chromatograms, self.rt, self.data_preparation.mZ_totlist , parent=self)
         if dialog.exec_():
             self.results = dialog.results
+            self.selected_results_file = dialog.selected_files
             self.print_to_output(f'PCA finished. Results \n {self.results}')
-            np.save(os.path.join(self.selected_folder, 'output', 'PCA_results.npy'), self.results)
+            np.save(os.path.join(self.selected_folder, 'output', f'PCA_results_{dialog.run_id}.npy'), self.results)
             
-            self.btn_testResults.setEnabled(True)
+            self.btn_StatisticResults.setEnabled(True)
 
     
-    def TestResults(self) -> None:
-        # select on which group the test should be performed
-        # get the group names from the meta folder
-        Group_item = [':'.join([number, ' | '.join(group)]) for number, group in zip(self.Groups.keys(), self.Groups.values())]
-        dialog = FileSelectionWindow(Group_item, parent = self)
+    def StatisticResults(self) -> None:
+        dialog = StatisticalWindow(self.results, self.selected_results_file, self.Groups, parent=self)
         if dialog.exec_():
-            selected_group = dialog.selected_file
-            self.print_to_output(f'Selected Group: {selected_group}')
-        else:
-            self.print_to_output('Please select a group.')
-            return
-
-
-            # test the results on the selected group for normal distribution and homoscedasticity
-            # get the results from the PCA
-            
-            # group the results by the selected group (part of the filename)
-            # perform the tests on the grouped results
-            # print the results of the tests
-            # save the results of the tests
-            
+            pass
 
 
 
