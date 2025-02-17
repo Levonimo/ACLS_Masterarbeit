@@ -29,6 +29,7 @@ def check_msconvert():
     try:
         subprocess.run("msconvert", check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except (subprocess.CalledProcessError, FileNotFoundError):
+        print("MSConvert not found in PATH")
         return False
     return True
 
