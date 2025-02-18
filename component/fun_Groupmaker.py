@@ -28,31 +28,30 @@ def detect_delimiter(filenames):
     return most_common_delimiter[0][0] if most_common_delimiter else None
 
 
-def GroupMaker(filenames):
+def GroupMaker(filenames, keyword = 'Parts'):
     delimiter = detect_delimiter(filenames)
-    component_values = defaultdict(set)
+    component_values_set = defaultdict(set)
+    component_values_list = defaultdict(list)
     for filename in filenames:
         parts = filename.split(delimiter)
         for idx, part in enumerate(parts):
-            component_values[idx].add(part)
+            component_values_set[idx].add(part)
+            component_values_list[idx].append(part)
     
     # Exclude groups that have the same amount of objects as the input
-    filtered_component_values = {idx: values for idx, values in component_values.items() if len(values) != len(filenames)}
-    
+    filtered_sets = {idx: values for idx, values in component_values_set.items() 
+                     if len(values) != len(filenames)}
+    filtered_lists = {idx: values for idx, values in component_values_list.items() 
+                      if len(set(values)) != len(filenames)}
     # Create a mapping of filenames to their parts
     filename_parts = {filename: filename.split(delimiter) for filename in filenames}
+
     
-    return filtered_component_values, filename_parts
-
-
-# component_values = infer_components(filenames)
-# print(component_values)
-
-
-
-
-
-[]
-
+    if keyword is 'Parts':
+        return filtered_sets, filename_parts
+    elif keyword is 'GroupList':
+        return filtered_sets, filtered_lists
+    else:
+        return filtered_sets, filename_parts
 
 

@@ -13,7 +13,8 @@ class NormalGUI(QWidget):
 
             self.results = np.load(self.selected_folder + '/output/PCA_results.npy', allow_pickle=True).item()
             #print(self.results)
-            self.file_names = self.results['scores'].keys()
+            self.file_names = list(self.results['scores'].keys())
+            print(self.file_names)
             #unwarped = np.load('./Outputs/unwarped_chromatograms.npy', allow_pickle=True).item()
             
             self.setWindowTitle('Statistical Analysis')
