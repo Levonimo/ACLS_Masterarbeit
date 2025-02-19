@@ -212,6 +212,7 @@ class GroupSelectionWindow(QDialog):
         self.list_widget = QListWidget()
         self.groups = groups
         self.group_strings = [str(group) for group in groups]
+        self.group_strings.append('None')
         self.list_widget.addItems(self.group_strings)
         self.list_widget.itemDoubleClicked.connect(self.select_group)
         layout.addWidget(self.list_widget)
@@ -225,7 +226,10 @@ class GroupSelectionWindow(QDialog):
 
     def select_group(self):
         selected_items = self.list_widget.selectedItems()
-        if selected_items:
+        if selected_items[0].text() == 'None':
+            self.selected_group = None
+            self.accept()
+        elif selected_items:
             selected_group_str = selected_items[0].text()
             self.selected_group = self.groups[self.group_strings.index(selected_group_str)]
             self.accept()

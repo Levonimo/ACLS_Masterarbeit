@@ -13,9 +13,6 @@ class NormalGUI(QWidget):
 
             self.results = np.load(self.selected_folder + '/output/PCA_results.npy', allow_pickle=True).item()
             #print(self.results)
-            self.file_names = list(self.results['scores'].keys())
-            print(self.file_names)
-            #unwarped = np.load('./Outputs/unwarped_chromatograms.npy', allow_pickle=True).item()
             
             self.setWindowTitle('Statistical Analysis')
         
@@ -34,7 +31,7 @@ class NormalGUI(QWidget):
 
         def open_statistical_window(self):
             # Example usage of PCAWindow
-            pca_window = StatisticalWindow(self.results, self.file_names, parent = self)
+            pca_window = StatisticalWindow(self.results, parent = self)
             if pca_window.exec_():
                 print(f'PCA Results: {pca_window.results}')
                 pass

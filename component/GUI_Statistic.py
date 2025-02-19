@@ -6,11 +6,17 @@ from PyQt5.QtGui import QCursor, QPixmap
 
 import sys 
 import os
+os.environ["OMP_NUM_THREADS"] = "1"
 
 from .styles_pyqtgraph import graph_style_chromatogram
 import pyqtgraph as pg
 from .fun_Groupmaker import GroupMaker
+from .fun_Statistic import (preprocess_data, compute_cophenetic_correlation, gap_statistic,
+                            compute_cluster_stability, compute_silhouette_score, compute_dunn_index)
+from .functions import assign_colors
+from .GUI_Selection import GroupSelectionWindow
 from .GUI_components import CheckableComboBox
+
 import numpy as np
 import pandas as pd
 
@@ -28,8 +34,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 
+
 class StatisticalWindow(QDialog):
-    def __init__(self, results, file_names, parent):
+    def __init__(self, results, parent):
         super().__init__(parent)
         # Set Window Settings
         
@@ -85,33 +92,39 @@ class StatisticalWindow(QDialog):
         self.kmeans_button.clicked.connect(lambda: self.plot_kmeans(self.score_df, 4, self.file_names))
         SettingsLayout.addWidget(self.kmeans_button, 1, 0)
 
+        self.analyze_button = QPushButton("Analyze Clustering", self)
+        self.analyze_button.clicked.connect(lambda: self.analyze_clustering(self.score_df))
+        SettingsLayout.addWidget(self.analyze_button, 2, 0)
+
+        # add Button for select Group for coloring
+        self.select_coloring_button = QPushButton('Select Coloring', self)
+        SettingsLayout.addWidget(self.select_coloring_button, 0, 2, 1, 1)
+        self.select_coloring_button.clicked.connect(self.select_coloring)
+
         SettingsGroupBox.setLayout(SettingsLayout)
         layout.addWidget(SettingsGroupBox, 0, 2)
 
 
         # Initialize the class variables
-
+        self.parent = parent
+        self.colors = None
+        
+        # Load the results from the PCA analysis and convert to a DataFrame
         self.results = results
         self.score_df = pd.DataFrame.from_dict(self.results['scores'], orient="index")
         self.score_df.columns = [f"PC{i+1}" for i in range(self.score_df.shape[1])]
-        print(self.score_df.head())
-        print(self.score_df.dtypes)
-        self.file_names = file_names
+        self.file_names = self.score_df.index.tolist()
 
+        # Create a dictionary of groups and a list of group names
         self.Groups, self.GroupList = GroupMaker(self.file_names, keyword='GroupList')
 
-        print(self.Groups)
-        print(self.GroupList)
-
+        # Add the group columns to the DataFrame
         for idx, group in self.Groups.items():
             # add each grouplist to the dataframe as a new column as categorical data
             self.score_df[f"Group {idx}"] = pd.Categorical(self.GroupList[idx], categories=group, ordered=True)
             self.text_output.append(f"Group {idx}: {group}")
 
-        print(self.score_df.head())
-
-        print(self.score_df.dtypes)
-
+        # Plot the first dendrogram
         filtered_df = self.score_df.select_dtypes(exclude=['category'])
         self.plot_dendrogram(filtered_df, self.file_names)
 
@@ -134,6 +147,24 @@ class StatisticalWindow(QDialog):
         ax.set_title("Dendrogram (Ward's Method)")
         ax.set_xlabel("Samples")
         ax.set_ylabel("Distance")
+
+        # coloring the labels with the group colors
+        if self.colors is not None:
+            first_color = list(self.colors.keys())[0]
+            groupname = next((f"Group {key}" for key, group in self.Groups.items() if first_color in group), None)
+            
+            # Recompute dendrogram to capture the ordering of leaves
+            ddata = dendrogram(linkage_matrix, labels=sample_labels, ax=ax, leaf_rotation=90)
+            leaves_order = ddata["leaves"]
+            
+            # Iterate over the leaves in the plotted order to update tick label colors
+            for pos, leaf_idx in enumerate(leaves_order):
+                sample = sample_labels[leaf_idx]
+                tick_label = ax.get_xticklabels()[pos]
+                tick_label.set_color(self.colors[self.score_df[groupname].loc[sample]])
+
+        # Reduce white space around the plot
+        self.figure.subplots_adjust(top=0.94, bottom=0.2, left=0.05, right=0.99)
         
         # Refresh canvas
         self.canvas.draw()
@@ -153,13 +184,79 @@ class StatisticalWindow(QDialog):
         y_kmeans = kmeans.predict(data)
 
         # Plot the k-means clusters
-        ax.scatter(data[:, 0], data[:, 1], c=y_kmeans, s=50, cmap='viridis')
+        #
+        # coloring the labels with the group colors
+        if self.colors is not None:
+            # Identify the group column that corresponds to the selected coloring
+            first_color = list(self.colors.keys())[0]
+            groupname = next((f"Group {key}" for key, group in self.Groups.items() if first_color in group), None)
+            
+            # Create a list of colors for each sample based on its group assignment
+            point_colors = [self.colors[self.score_df[groupname].loc[sample]] for sample in sample_labels]
+            
+            # Clear the existing scatter plot and redraw the points with the new group colors
+            ax.scatter(data[:, 0], data[:, 1], c=point_colors, s=50)
+        else:
+            ax.scatter(data[:, 0], data[:, 1], c=y_kmeans, s=50, cmap='viridis')
+
 
         # Plot the centroids
         centers = kmeans.cluster_centers_
         ax.scatter(centers[:, 0], centers[:, 1], c='black', s=200, alpha=0.5)
+        import matplotlib.cm as cm
+        import matplotlib.patches as mpatches
 
+        colors = [cm.viridis(float(i)/k) for i in range(k)]
+        for i in range(k):
+            cluster_points = data[y_kmeans == i]
+            # Calculate the maximum distance from the cluster center to its points
+            distances = np.linalg.norm(cluster_points - centers[i], axis=1)
+            radius = distances.max()
+            circle = mpatches.Circle(centers[i],
+                                     radius*0.9,
+                                     color=colors[i],
+                                     alpha=0.2,
+                                     zorder=0)
+            ax.add_patch(circle)
         # Refresh canvas
         self.canvas.draw()
 
 
+
+
+    def analyze_clustering(self, df):
+        """
+        Runs all clustering significance checks and prints results.
+
+        Parameters:
+            df (pd.DataFrame): Input DataFrame containing PCA scores.
+        """
+        # Preprocess data
+        pc_data, sample_names = preprocess_data(df)
+
+        # Compute statistics
+        cophenetic_corr = compute_cophenetic_correlation(pc_data)
+        optimal_clusters = gap_statistic(pc_data)
+        stability_score = compute_cluster_stability(pc_data, optimal_clusters)
+        silhouette = compute_silhouette_score(pc_data, optimal_clusters)
+        dunn_index = compute_dunn_index(pc_data, optimal_clusters)
+
+        # Print results to output
+        self.text_output.append(f"Cophenetic Correlation: {cophenetic_corr:.4f}")
+        self.text_output.append(f"Optimal Clusters (Gap Statistic): {optimal_clusters}")
+        self.text_output.append(f"Cluster Stability Score: {stability_score:.4f}")
+        self.text_output.append(f"Silhouette Score: {silhouette:.4f}")
+        self.text_output.append(f"Dunn Index: {dunn_index:.4f}")
+
+
+    def select_coloring(self):
+        # open a new window with the group selection
+        dialog = GroupSelectionWindow(list(self.Groups.values()), parent = self)
+        if dialog.exec_():
+            self.group_for_color = dialog.selected_group
+            if self.group_for_color is None:
+                self.colors = None
+            else:
+                self.colors = assign_colors(self.group_for_color)
+
+            self.text_output.append(f"Selected Group: {self.colors}")

@@ -1,3 +1,7 @@
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+
+
 import numpy as np
 import pandas as pd
 from scipy.spatial.distance import pdist
@@ -8,8 +12,7 @@ from sklearn.utils import resample
 from scipy.spatial.distance import euclidean
 from itertools import combinations
 
-import os
-os.environ["OMP_NUM_THREADS"] = "1"
+
 
 def preprocess_data(df):
     """
@@ -23,7 +26,7 @@ def preprocess_data(df):
         list: Sample names (index values).
     """
     # Select only numerical PCA columns (assuming they start with 'PC')
-    pc_data = df.filter(like='PC').values
+    pc_data = df.select_dtypes(exclude=['category']).values
     sample_names = df.index.tolist()  # Use index as sample names
     return pc_data, sample_names
 
@@ -54,17 +57,22 @@ def gap_statistic(pc_data, n_refs=10, max_clusters=10):
     Returns:
         int: Optimal number of clusters.
     """
+    eps = 1e-10
     gaps = np.zeros(max_clusters)
     for k in range(1, max_clusters + 1):
         kmeans = KMeans(n_clusters=k, random_state=42).fit(pc_data)
+        # Replace inertia with epsilon if it's zero
+        inertia = kmeans.inertia_ if kmeans.inertia_ > 0 else eps
         ref_disps = np.zeros(n_refs)
         
         for i in range(n_refs):
             random_ref = np.random.uniform(pc_data.min(axis=0), pc_data.max(axis=0), size=pc_data.shape)
             ref_kmeans = KMeans(n_clusters=k, random_state=42).fit(random_ref)
-            ref_disps[i] = ref_kmeans.inertia_
+            # Replace reference inertia with epsilon if it's zero
+            ref_disp = ref_kmeans.inertia_ if ref_kmeans.inertia_ > 0 else eps
+            ref_disps[i] = ref_disp
         
-        gaps[k - 1] = np.mean(np.log(ref_disps)) - np.log(kmeans.inertia_)
+        gaps[k - 1] = np.mean(np.log(ref_disps)) - np.log(inertia)
 
     optimal_clusters = np.argmax(gaps) + 1  # Add 1 because index starts from 0
     return optimal_clusters
@@ -167,23 +175,23 @@ def analyze_clustering(df):
     print(f"Silhouette Score: {silhouette:.4f}")
     print(f"Dunn Index: {dunn_index:.4f}")
 
-# If this file is run directly, you can load test data here
-if __name__ == "__main__":
-    # Example test data
-    data = {
-        "PC1": np.random.randn(10),
-        "PC2": np.random.randn(10),
-        "PC3": np.random.randn(10),
-        "PC4": np.random.randn(10),
-        "PC5": np.random.randn(10),
-        "Group 1": ["A1"] * 10,
-        "Group 2": list(range(1, 11)),
-        "Group 3": ["SGO", "SOL", "SGL", "SOO", "SGL", "SGO", "SOL", "SGL", "SOO", "SGO"]
-    }
-    df = pd.DataFrame(data)
-    df.set_index(pd.Index(["002_A1_2_SOO", "003_A1_3_SGO", "004_A1_4_SOL", "005_A1_5_SGL",
-                           "006_A1_6_SGL", "007_A1_7_SGO", "008_A1_8_SOL", "009_A1_9_SGL",
-                           "010_A1_10_SOO", "011_A1_11_SGO"]), inplace=True)
+# # If this file is run directly, you can load test data here
+# if __name__ == "__main__":
+#     # Example test data
+#     data = {
+#         "PC1": np.random.randn(10),
+#         "PC2": np.random.randn(10),
+#         "PC3": np.random.randn(10),
+#         "PC4": np.random.randn(10),
+#         "PC5": np.random.randn(10),
+#         "Group 1": ["A1"] * 10,
+#         "Group 2": list(range(1, 11)),
+#         "Group 3": ["SGO", "SOL", "SGL", "SOO", "SGL", "SGO", "SOL", "SGL", "SOO", "SGO"]
+#     }
+#     df = pd.DataFrame(data)
+#     df.set_index(pd.Index(["002_A1_2_SOO", "003_A1_3_SGO", "004_A1_4_SOL", "005_A1_5_SGL",
+#                            "006_A1_6_SGL", "007_A1_7_SGO", "008_A1_8_SOL", "009_A1_9_SGL",
+#                            "010_A1_10_SOO", "011_A1_11_SGO"]), inplace=True)
 
-    # Run clustering analysis
-    analyze_clustering(df)
+#     # Run clustering analysis
+#     analyze_clustering(df)
