@@ -98,8 +98,27 @@ class StatisticalWindow(QDialog):
 
         # add Button for select Group for coloring
         self.select_coloring_button = QPushButton('Select Coloring', self)
-        SettingsLayout.addWidget(self.select_coloring_button, 0, 2, 1, 1)
+        SettingsLayout.addWidget(self.select_coloring_button, 3, 0, 1, 1)
         self.select_coloring_button.clicked.connect(self.select_coloring)
+
+        # add dropdown menu for diffrent supervised maschine learning algorithms
+        self.algorithm_label = QLabel("Supervised Learning Algorithm", self)
+        SettingsLayout.addWidget(self.algorithm_label, 4, 0)
+        self.algorithm_combobox = QComboBox(self)
+
+        self.algorithm_combobox.addItem("Naive Bayes")
+        self.algorithm_combobox.addItem("K-Nearest Neighbors")
+        self.algorithm_combobox.addItem("Linear Discriminant Analysis")
+
+        self.algorithm_combobox.addItem("Decision Tree")
+        self.algorithm_combobox.addItem("Random Forest")
+        self.algorithm_combobox.addItem("Gradient Boosting")
+
+        SettingsLayout.addWidget(self.algorithm_combobox, 5, 0)
+
+        self.ml_button = QPushButton("Supervised ML", self)
+        SettingsLayout.addWidget(self.ml_button, 6, 0)
+        self.ml_button.clicked.connect(self.run_ml)
 
         SettingsGroupBox.setLayout(SettingsLayout)
         layout.addWidget(SettingsGroupBox, 0, 2)
@@ -260,3 +279,86 @@ class StatisticalWindow(QDialog):
                 self.colors = assign_colors(self.group_for_color)
 
             self.text_output.append(f"Selected Group: {self.colors}")
+
+    
+    def run_ml(self):
+        # Get the selected algorithm
+        algorithm = self.algorithm_combobox.currentText()
+
+        # Get the data
+        data = self.score_df.select_dtypes(exclude=['category'])
+
+        first_color = list(self.colors.keys())[0]
+        groupname = next((f"Group {key}" for key, group in self.Groups.items() if first_color in group), None)
+            
+
+        target = self.score_df[groupname]
+
+        # Run the selected algorithm
+        if algorithm == "Naive Bayes":
+            from sklearn.naive_bayes import GaussianNB
+            model = GaussianNB()
+            self.text_output.append("Running Naive Bayes Classifier")
+        elif algorithm == "K-Nearest Neighbors":
+            from sklearn.neighbors import KNeighborsClassifier
+            model = KNeighborsClassifier()
+            self.text_output.append("Running K-Nearest Neighbors Classifier")
+        elif algorithm == "Linear Discriminant Analysis":
+            from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+            model = LinearDiscriminantAnalysis()
+            self.text_output.append("Running Linear Discriminant Analysis")
+        elif algorithm == "Decision Tree":
+            from sklearn.tree import DecisionTreeClassifier
+            model = DecisionTreeClassifier()
+            self.text_output.append("Running Decision Tree Classifier")
+        elif algorithm == "Random Forest":
+            from sklearn.ensemble import RandomForestClassifier
+            model = RandomForestClassifier()
+            self.text_output.append("Running Random Forest Classifier")
+        elif algorithm == "Gradient Boosting":
+            from sklearn.ensemble import GradientBoostingClassifier
+            model = GradientBoostingClassifier()
+            self.text_output.append("Running Gradient Boosting Classifier")
+
+        model.fit(data, target)
+        accuracy = model.score(data, target)
+
+        self.text_output.append(f"Accuracy: {accuracy:.4f}")
+
+        # Print the confusion matrix
+        from sklearn.metrics import confusion_matrix
+        y_pred = model.predict(data)
+        cm = confusion_matrix(target, y_pred)
+        # calculate the relative confusion matrix
+        cm = np.round(cm / cm.sum(axis=1)[:, np.newaxis],2)
+        self.text_output.append(f"Confusion Matrix:\n{cm}")
+        # Plot the confusion matrix
+        self.figure.clf()
+        ax = self.figure.add_subplot(111)
+        cax = ax.matshow(cm, cmap='viridis')
+        # add colorbar and adjust it from 0 to 1
+        self.figure.colorbar(cax)
+        ax.set_xlabel("Predicted Label")
+        ax.set_ylabel("True Label")
+        ax.set_title("Confusion Matrix")
+        # set the x and y ticks
+        ax.set_xticklabels(list(self.Groups.keys()))
+        ax.set_yticklabels(list(self.Groups.keys()))
+        self.figure.subplots_adjust(top=0.94, bottom=0.2, left=0.05, right=0.99)
+
+        # Refresh canvas
+        self.canvas.draw()
+
+        # Print the classification report
+        from sklearn.metrics import classification_report
+        report = classification_report(target, y_pred)
+        self.text_output.append(f"Classification Report:\n{report}")
+
+        # Print the feature importances
+        if algorithm in ["Decision Tree", "Random Forest", "Gradient Boosting"]:
+            feature_importances = model.feature_importances_
+            self.text_output.append(f"Feature Importances:\n{feature_importances}")
+
+        # Plot the decision boundaries
+        if data.shape[1] == 2:
+            self.plot_decision_boundaries(data, target, model)
