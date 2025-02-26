@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QDialog, QLabel, QLineEdit, QPushButton, 
                              QCheckBox, QComboBox,QGridLayout, QGroupBox,
-                             QMessageBox, QToolTip,QTextEdit)
+                             QMessageBox, QToolTip,QTextEdit, QDoubleSpinBox)
 
 from PyQt5.QtGui import QCursor, QPixmap
 
@@ -101,9 +101,21 @@ class StatisticalWindow(QDialog):
         SettingsLayout.addWidget(self.select_coloring_button, 3, 0, 1, 1)
         self.select_coloring_button.clicked.connect(self.select_coloring)
 
+
+        # add dropdown menu for diffrent supervised maschine learning algorithms
+        self.algorithm_label = QLabel("Size Validation Set", self)
+        SettingsLayout.addWidget(self.algorithm_label, 4, 0, 1, 1)
+        # Using QDoubleSpinBox restricts the input to float values between 0.0 and 0.9
+        self.size_validation_set = QDoubleSpinBox(self)
+        self.size_validation_set.setRange(0.0, 0.9)
+        self.size_validation_set.setSingleStep(0.05)
+        SettingsLayout.addWidget(self.size_validation_set, 5, 0, 1, 1)
+        
+    
+
         # add dropdown menu for diffrent supervised maschine learning algorithms
         self.algorithm_label = QLabel("Supervised Learning Algorithm", self)
-        SettingsLayout.addWidget(self.algorithm_label, 4, 0)
+        SettingsLayout.addWidget(self.algorithm_label, 6, 0)
         self.algorithm_combobox = QComboBox(self)
 
         self.algorithm_combobox.addItem("Naive Bayes")
@@ -114,10 +126,10 @@ class StatisticalWindow(QDialog):
         self.algorithm_combobox.addItem("Random Forest")
         self.algorithm_combobox.addItem("Gradient Boosting")
 
-        SettingsLayout.addWidget(self.algorithm_combobox, 5, 0)
+        SettingsLayout.addWidget(self.algorithm_combobox, 7, 0)
 
         self.ml_button = QPushButton("Supervised ML", self)
-        SettingsLayout.addWidget(self.ml_button, 6, 0)
+        SettingsLayout.addWidget(self.ml_button, 8, 0)
         self.ml_button.clicked.connect(self.run_ml)
 
         SettingsGroupBox.setLayout(SettingsLayout)
@@ -291,8 +303,13 @@ class StatisticalWindow(QDialog):
         first_color = list(self.colors.keys())[0]
         groupname = next((f"Group {key}" for key, group in self.Groups.items() if first_color in group), None)
             
-
+        print(groupname)
         target = self.score_df[groupname]
+
+        if self.size_validation_set.value() > 0:
+            from sklearn.model_selection import train_test_split
+            data, val_data, target, val_target = train_test_split(data, target, test_size=self.size_validation_set.value(), random_state=42)
+            
 
         # Run the selected algorithm
         if algorithm == "Naive Bayes":
@@ -322,13 +339,15 @@ class StatisticalWindow(QDialog):
 
         model.fit(data, target)
         accuracy = model.score(data, target)
+        accuracy_val = model.score(val_data, val_target)
 
         self.text_output.append(f"Accuracy: {accuracy:.4f}")
+        self.text_output.append(f"Accuracy Validation: {accuracy_val:.4f}")
 
         # Print the confusion matrix
         from sklearn.metrics import confusion_matrix
-        y_pred = model.predict(data)
-        cm = confusion_matrix(target, y_pred)
+        y_pred = model.predict(val_data)
+        cm = confusion_matrix(val_target, y_pred)
         # calculate the relative confusion matrix
         cm = np.round(cm / cm.sum(axis=1)[:, np.newaxis],2)
         self.text_output.append(f"Confusion Matrix:\n{cm}")
@@ -340,10 +359,16 @@ class StatisticalWindow(QDialog):
         self.figure.colorbar(cax)
         ax.set_xlabel("Predicted Label")
         ax.set_ylabel("True Label")
-        ax.set_title("Confusion Matrix")
         # set the x and y ticks
-        ax.set_xticklabels(list(self.Groups.keys()))
-        ax.set_yticklabels(list(self.Groups.keys()))
+        # Use the target group names as tick labels, ensuring all elements are properly positioned
+        tick_labels = list(self.score_df[groupname].cat.categories)
+        ticks = np.arange(len(tick_labels))
+        # Set the extent so that all cells (and thus all labels) are centered correctly.
+        cax = ax.matshow(cm, cmap='viridis', extent=[-0.5, len(tick_labels) - 0.5, len(tick_labels) - 0.5, -0.5])
+        ax.set_xticks(ticks)
+        ax.set_yticks(ticks)
+        ax.set_xticklabels(tick_labels, rotation=90)
+        ax.set_yticklabels(tick_labels)
         self.figure.subplots_adjust(top=0.94, bottom=0.2, left=0.05, right=0.99)
 
         # Refresh canvas
@@ -351,7 +376,8 @@ class StatisticalWindow(QDialog):
 
         # Print the classification report
         from sklearn.metrics import classification_report
-        report = classification_report(target, y_pred)
+
+        report = classification_report(val_targettarget, y_pred)
         self.text_output.append(f"Classification Report:\n{report}")
 
         # Print the feature importances
@@ -361,4 +387,4 @@ class StatisticalWindow(QDialog):
 
         # Plot the decision boundaries
         if data.shape[1] == 2:
-            self.plot_decision_boundaries(data, target, model)
+            self.plot_decision_boundaries(val_data, val_target, model)
