@@ -105,7 +105,7 @@ class MainWindow(QWidget):
 
         self.btn_StatisticResults = QPushButton('Statistic Results', self)
         self.btn_StatisticResults.clicked.connect(self.StatisticResults)
-        #self.btn_StatisticResults.setEnabled(False)
+        self.btn_StatisticResults.setEnabled(False)
         InputLayout.addWidget(self.btn_StatisticResults, 7, 0)
 
 
@@ -392,7 +392,7 @@ class MainWindow(QWidget):
 
     
     def StatisticResults(self) -> None:
-        dialog = StatisticalWindow(self.results, self.selected_results_file, self.Groups, parent=self)
+        dialog = StatisticalWindow(self.results, parent=self)
         if dialog.exec_():
             pass
 

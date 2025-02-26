@@ -3,13 +3,14 @@ import os
 from PyQt5.QtWidgets import QApplication, QWidget
 from component.GUI_Analysis import PCAWindow
 import numpy as np
+from component.fun_Groupmaker import GroupMaker
 
 sys.path.insert(1, os.path.dirname(__file__))
 
 class NormalGUI(QWidget):
         def __init__(self):
             super().__init__()
-            self.selected_folder = "R:/agilent/GC-MS/Emma.net/wilv/Data/Daten_MA"
+            self.selected_folder = "U:\Documents\Masterarbeit\Daten_MA"
 
 
             warped = np.load('./Outputs/warped_chromatograms.npy', allow_pickle=True).item()
@@ -19,6 +20,8 @@ class NormalGUI(QWidget):
             targets = np.load('./Outputs/selected_target.npy', allow_pickle=True)
             # print(targets)
             rt = np.load('./Outputs/retention_time.npy', allow_pickle=True)
+
+            self.Groups, self.filename_parts = GroupMaker(targets)
 
             # mz from range 
             mz_list = np.round(np.arange(35, 400.1, 1), 1)

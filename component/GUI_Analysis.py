@@ -555,11 +555,14 @@ class PCAWindow(QDialog):
 
         scatter_data = []
         for sample in self.selected_files:
+            color = None
             # check and select which of the groupelement is in the sample name
             for i in self.group_for_color:
                 if i in sample:
                     color = self.colors[i]
                     break
+            if color is None:
+                color = (0, 0, 0)  # default color if no match found
             scatter_data.append({'pos': (scores[sample][xaxis], scores[sample][yaxis]), 'data': sample, 'brush': pg.mkBrush(color)})
 
         scatter_plot = pg.ScatterPlotItem(size=10, pen=None, pxMode=True)

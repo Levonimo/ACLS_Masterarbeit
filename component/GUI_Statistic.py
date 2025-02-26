@@ -349,14 +349,14 @@ class StatisticalWindow(QDialog):
         y_pred = model.predict(val_data)
         cm = confusion_matrix(val_target, y_pred)
         # calculate the relative confusion matrix
-        cm = np.round(cm / cm.sum(axis=1)[:, np.newaxis],2)
+        #cm = np.round(cm / cm.sum(axis=1)[:, np.newaxis],2)
         self.text_output.append(f"Confusion Matrix:\n{cm}")
         # Plot the confusion matrix
         self.figure.clf()
         ax = self.figure.add_subplot(111)
         cax = ax.matshow(cm, cmap='viridis')
         # add colorbar and adjust it from 0 to 1
-        self.figure.colorbar(cax)
+        
         ax.set_xlabel("Predicted Label")
         ax.set_ylabel("True Label")
         # set the x and y ticks
@@ -364,12 +364,13 @@ class StatisticalWindow(QDialog):
         tick_labels = list(self.score_df[groupname].cat.categories)
         ticks = np.arange(len(tick_labels))
         # Set the extent so that all cells (and thus all labels) are centered correctly.
-        cax = ax.matshow(cm, cmap='viridis', extent=[-0.5, len(tick_labels) - 0.5, len(tick_labels) - 0.5, -0.5])
+        #cax = ax.matshow(cm, cmap='viridis', extent=[-0.5, len(tick_labels) - 0.5, len(tick_labels) - 0.5, -0.5])
+        self.figure.colorbar(cax)
         ax.set_xticks(ticks)
         ax.set_yticks(ticks)
         ax.set_xticklabels(tick_labels, rotation=90)
         ax.set_yticklabels(tick_labels)
-        self.figure.subplots_adjust(top=0.94, bottom=0.2, left=0.05, right=0.99)
+        self.figure.subplots_adjust(top=0.9, bottom=0.1, left=0.05, right=0.99)
 
         # Refresh canvas
         self.canvas.draw()
@@ -377,7 +378,7 @@ class StatisticalWindow(QDialog):
         # Print the classification report
         from sklearn.metrics import classification_report
 
-        report = classification_report(val_targettarget, y_pred)
+        report = classification_report(val_target, y_pred)
         self.text_output.append(f"Classification Report:\n{report}")
 
         # Print the feature importances
