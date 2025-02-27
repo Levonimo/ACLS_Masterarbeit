@@ -303,7 +303,7 @@ class StatisticalWindow(QDialog):
         first_color = list(self.colors.keys())[0]
         groupname = next((f"Group {key}" for key, group in self.Groups.items() if first_color in group), None)
             
-        print(groupname)
+        
         target = self.score_df[groupname]
 
         if self.size_validation_set.value() > 0:
