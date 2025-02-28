@@ -45,7 +45,7 @@ def compute_cophenetic_correlation(pc_data):
     coph_corr, _ = cophenet(linkage_matrix, dist_matrix)
     return coph_corr
 
-def gap_statistic(pc_data, n_refs=10, max_clusters=10):
+def gap_statistic(pc_data, n_refs=10, max_clusters=15):
     """
     Computes the optimal number of clusters using the Gap Statistic.
     
@@ -113,43 +113,62 @@ def compute_silhouette_score(pc_data, optimal_clusters):
     cluster_labels = fcluster(linkage_matrix, t=optimal_clusters, criterion='maxclust')
     return silhouette_score(pc_data, cluster_labels)
 
-def compute_dunn_index(pc_data, optimal_clusters):
+def compute_dunn_index(pc_data, min_clusters=2, max_clusters=15):
     """
-    Computes the Dunn Index to assess clustering compactness and separation.
-
+    Determines the optimal number of clusters based on the Dunn Index.
+    
+    It iterates over candidate cluster numbers (from min_clusters to max_clusters),
+    computes the Dunn Index for each clustering (using hierarchical clustering with Ward's method),
+    and returns the cluster count that achieves the highest Dunn Index along with that index.
+    
     Parameters:
         pc_data (np.array): PCA scores.
-        optimal_clusters (int): Number of clusters.
-
+        min_clusters (int): Minimum number of clusters to test (default: 2).
+        max_clusters (int): Maximum number of clusters to test (default: 10).
+    
     Returns:
-        float: Dunn index.
+        tuple: (optimal_clusters (int), best_dunn (float)) where:
+            optimal_clusters: The number of clusters that received the highest Dunn index.
+            best_dunn: The highest Dunn index value.
     """
-    linkage_matrix = linkage(pdist(pc_data), method='ward')
-    cluster_labels = fcluster(linkage_matrix, t=optimal_clusters, criterion='maxclust')
+    best_dunn = -np.inf
+    optimal_clusters = min_clusters
 
-    unique_clusters = np.unique(cluster_labels)
-    intra_dists = []
-    inter_dists = []
+    for k in range(min_clusters, max_clusters + 1):
+        # Compute cluster labels using hierarchical clustering
+        linkage_matrix = linkage(pdist(pc_data), method='ward')
+        cluster_labels = fcluster(linkage_matrix, t=k, criterion='maxclust')
+        unique_clusters = np.unique(cluster_labels)
+        intra_dists = []
+        inter_dists = []
 
-    for k in unique_clusters:
-        cluster_points = pc_data[cluster_labels == k]
-        # If only one point, intra-cluster distance is 0.
-        if cluster_points.shape[0] < 2:
-            intra_dists.append(0)
+        # Compute maximum intra-cluster distances for each cluster
+        for clust in unique_clusters:
+            cluster_points = pc_data[cluster_labels == clust]
+            if cluster_points.shape[0] < 2:
+                intra_dists.append(0)
+            else:
+                distances = [euclidean(x, y) for x, y in combinations(cluster_points, 2)]
+                intra_dists.append(np.max(distances))
+
+        # Compute minimum inter-cluster distances for each pair of clusters
+        for (cl1, cl2) in combinations(unique_clusters, 2):
+            cluster1 = pc_data[cluster_labels == cl1]
+            cluster2 = pc_data[cluster_labels == cl2]
+            inter_dists.append(np.min([euclidean(x, y) for x in cluster1 for y in cluster2]))
+
+        max_intra = np.max(intra_dists)
+        # Prevent division by zero
+        if max_intra == 0:
+            current_dunn = float('inf')
         else:
-            distances = [euclidean(x, y) for x, y in combinations(cluster_points, 2)]
-            intra_dists.append(np.max(distances))
+            current_dunn = np.min(inter_dists) / max_intra
 
-    for (k1, k2) in combinations(unique_clusters, 2):
-        cluster1 = pc_data[cluster_labels == k1]
-        cluster2 = pc_data[cluster_labels == k2]
-        inter_dists.append(np.min([euclidean(x, y) for x in cluster1 for y in cluster2]))
+        if current_dunn > best_dunn:
+            best_dunn = current_dunn
+            optimal_clusters = k
 
-    max_intra = np.max(intra_dists)
-    # Prevent division by zero
-    if max_intra == 0:
-        return float('inf')
-    return np.min(inter_dists) / max_intra
+    return optimal_clusters, best_dunn
 
 def analyze_clustering(df):
     """
@@ -166,14 +185,14 @@ def analyze_clustering(df):
     optimal_clusters = gap_statistic(pc_data)
     stability_score = compute_cluster_stability(pc_data, optimal_clusters)
     silhouette = compute_silhouette_score(pc_data, optimal_clusters)
-    dunn_index = compute_dunn_index(pc_data, optimal_clusters)
+    optimal_clusters_dunn, dunn_index = compute_dunn_index(pc_data)
 
     # Print results
     print(f"Cophenetic Correlation: {cophenetic_corr:.4f}")
     print(f"Optimal Clusters (Gap Statistic): {optimal_clusters}")
     print(f"Cluster Stability Score: {stability_score:.4f}")
     print(f"Silhouette Score: {silhouette:.4f}")
-    print(f"Dunn Index: {dunn_index:.4f}")
+    print(f"Dunn Index: {dunn_index:.4f} (Optimal Clusters: {optimal_clusters_dunn})")
 
 # # If this file is run directly, you can load test data here
 # if __name__ == "__main__":

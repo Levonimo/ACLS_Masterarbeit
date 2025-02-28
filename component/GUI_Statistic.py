@@ -166,38 +166,32 @@ class StatisticalWindow(QDialog):
         self.figure.clf()
         ax = self.figure.add_subplot(111)
 
-        # exclude the categorical data
+        # Exclude categorical data
         data = data.select_dtypes(exclude=['category'])
         
         # Compute distance and linkage matrix
         dist_matrix = pdist(data, metric='euclidean')
         linkage_matrix = linkage(dist_matrix, method='ward')
         
-        # Plot the dendrogram
-        dendrogram(linkage_matrix, labels=sample_labels, ax=ax, leaf_rotation=90)
+        # Plot the dendrogram and capture leaf ordering
+        ddata = dendrogram(linkage_matrix, labels=sample_labels, ax=ax, leaf_rotation=90)
+        
         ax.set_title("Dendrogram (Ward's Method)")
         ax.set_xlabel("Samples")
         ax.set_ylabel("Distance")
 
-        # coloring the labels with the group colors
+        # Color the tick labels if coloring information is available
         if self.colors is not None:
             first_color = list(self.colors.keys())[0]
             groupname = next((f"Group {key}" for key, group in self.Groups.items() if first_color in group), None)
-            
-            # Recompute dendrogram to capture the ordering of leaves
-            ddata = dendrogram(linkage_matrix, labels=sample_labels, ax=ax, leaf_rotation=90)
             leaves_order = ddata["leaves"]
-            
-            # Iterate over the leaves in the plotted order to update tick label colors
             for pos, leaf_idx in enumerate(leaves_order):
                 sample = sample_labels[leaf_idx]
-                tick_label = ax.get_xticklabels()[pos]
-                tick_label.set_color(self.colors[self.score_df[groupname].loc[sample]])
-
-        # Reduce white space around the plot
-        self.figure.subplots_adjust(top=0.94, bottom=0.2, left=0.05, right=0.99)
+                tick_labels = ax.get_xticklabels()
+                if pos < len(tick_labels):  # Ensure index is within bounds
+                    tick_labels[pos].set_color(self.colors[self.score_df[groupname].loc[sample]])
         
-        # Refresh canvas
+        self.figure.subplots_adjust(top=0.94, bottom=0.2, left=0.05, right=0.99)
         self.canvas.draw()
 
     def plot_kmeans(self, data, k, sample_labels):
@@ -270,14 +264,20 @@ class StatisticalWindow(QDialog):
         optimal_clusters = gap_statistic(pc_data)
         stability_score = compute_cluster_stability(pc_data, optimal_clusters)
         silhouette = compute_silhouette_score(pc_data, optimal_clusters)
-        dunn_index = compute_dunn_index(pc_data, optimal_clusters)
+        optimal_clusters_dunn, dunn_index = compute_dunn_index(pc_data)
 
-        # Print results to output
-        self.text_output.append(f"Cophenetic Correlation: {cophenetic_corr:.4f}")
-        self.text_output.append(f"Optimal Clusters (Gap Statistic): {optimal_clusters}")
-        self.text_output.append(f"Cluster Stability Score: {stability_score:.4f}")
-        self.text_output.append(f"Silhouette Score: {silhouette:.4f}")
-        self.text_output.append(f"Dunn Index: {dunn_index:.4f}")
+        # Print results to output with descriptions
+        self.text_output.append(f"Cophenetic Correlation: {cophenetic_corr:.4f} "
+                                "(Measures how well the dendrogram preserves the pairwise distances)")
+        self.text_output.append(f"Optimal Clusters (Gap Statistic): {optimal_clusters} "
+                                "(Suggests the ideal number of clusters based on expected separation)")
+        self.text_output.append(f"Cluster Stability Score: {stability_score:.4f} "
+                                "(Indicates the robustness and reproducibility of the clusters)")
+        self.text_output.append(f"Silhouette Score: {silhouette:.4f} "
+                                "(Evaluates the quality of the clustering; higher values indicate better consistency)")
+        self.text_output.append(f"Dunn Index: {dunn_index:.4f} (Optimal Clusters: {optimal_clusters_dunn}) "
+                                "(Ratio of minimum inter-cluster distance to maximum intra-cluster distance; higher is better)"
+                                " (Optimal number of clusters based on Dunn Index)")
 
 
     def select_coloring(self):
@@ -292,50 +292,60 @@ class StatisticalWindow(QDialog):
 
             self.text_output.append(f"Selected Group: {self.colors}")
 
+    def get_model(self, algorithm):
+        from sklearn.naive_bayes import GaussianNB
+        from sklearn.neighbors import KNeighborsClassifier
+        from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+        from sklearn.tree import DecisionTreeClassifier
+        from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+
+        model_mapping = {
+            "Naive Bayes": (GaussianNB, "Running Naive Bayes Classifier"),
+            "K-Nearest Neighbors": (KNeighborsClassifier, "Running K-Nearest Neighbors Classifier"),
+            "Linear Discriminant Analysis": (LinearDiscriminantAnalysis, "Running Linear Discriminant Analysis"),
+            "Decision Tree": (DecisionTreeClassifier, "Running Decision Tree Classifier"),
+            "Random Forest": (RandomForestClassifier, "Running Random Forest Classifier"),
+            "Gradient Boosting": (GradientBoostingClassifier, "Running Gradient Boosting Classifier")
+        }
+        
+        model_info = model_mapping.get(algorithm)
+        if model_info is None:
+            self.text_output.append("Selected algorithm is not supported.")
+            return None, None
+        model_class, message = model_info
+        return model_class(), message
     
     def run_ml(self):
-        # Get the selected algorithm
+        # Get the selected algorithm and the data with numerical features only
         algorithm = self.algorithm_combobox.currentText()
-
-        # Get the data
         data = self.score_df.select_dtypes(exclude=['category'])
 
+        # Check if colors (and thus group selection) have been defined
+        if not self.colors:
+            self.text_output.append("Coloring group not selected. Please select a group for coloring first.")
+            return
+
         first_color = list(self.colors.keys())[0]
-        groupname = next((f"Group {key}" for key, group in self.Groups.items() if first_color in group), None)
-            
-        
+        groupname = next((f"Group {key}" 
+                          for key, group in self.Groups.items() 
+                          if first_color in group), None)
         target = self.score_df[groupname]
 
+        # Split data if a validation set size has been specified
         if self.size_validation_set.value() > 0:
             from sklearn.model_selection import train_test_split
-            data, val_data, target, val_target = train_test_split(data, target, test_size=self.size_validation_set.value(), random_state=42)
-            
+            data, val_data, target, val_target = train_test_split(
+                data, target, test_size=self.size_validation_set.value(), random_state=42)
+        else:
+            # If no validation set is specified, use the training set for validation (warning: use with care)
+            val_data, val_target = data, target
 
-        # Run the selected algorithm
-        if algorithm == "Naive Bayes":
-            from sklearn.naive_bayes import GaussianNB
-            model = GaussianNB()
-            self.text_output.append("Running Naive Bayes Classifier")
-        elif algorithm == "K-Nearest Neighbors":
-            from sklearn.neighbors import KNeighborsClassifier
-            model = KNeighborsClassifier()
-            self.text_output.append("Running K-Nearest Neighbors Classifier")
-        elif algorithm == "Linear Discriminant Analysis":
-            from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-            model = LinearDiscriminantAnalysis()
-            self.text_output.append("Running Linear Discriminant Analysis")
-        elif algorithm == "Decision Tree":
-            from sklearn.tree import DecisionTreeClassifier
-            model = DecisionTreeClassifier()
-            self.text_output.append("Running Decision Tree Classifier")
-        elif algorithm == "Random Forest":
-            from sklearn.ensemble import RandomForestClassifier
-            model = RandomForestClassifier()
-            self.text_output.append("Running Random Forest Classifier")
-        elif algorithm == "Gradient Boosting":
-            from sklearn.ensemble import GradientBoostingClassifier
-            model = GradientBoostingClassifier()
-            self.text_output.append("Running Gradient Boosting Classifier")
+        # Get the model and print the selected message
+        model, message = self.get_model(algorithm)
+        if model is None:
+            return  # Exit if there was a problem with model selection
+
+        self.text_output.append(message)
 
         model.fit(data, target)
         accuracy = model.score(data, target)
@@ -349,7 +359,7 @@ class StatisticalWindow(QDialog):
         y_pred = model.predict(val_data)
         cm = confusion_matrix(val_target, y_pred)
         # calculate the relative confusion matrix
-        #cm = np.round(cm / cm.sum(axis=1)[:, np.newaxis],2)
+        cm = np.round(cm / cm.sum(axis=1)[:, np.newaxis],2)
         self.text_output.append(f"Confusion Matrix:\n{cm}")
         # Plot the confusion matrix
         self.figure.clf()
