@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QDialog, QLabel, QLineEdit, QPushButton, 
                              QCheckBox, QComboBox,QGridLayout, QGroupBox,
-                             QMessageBox, QToolTip,QTextEdit, QDoubleSpinBox)
+                             QMessageBox, QToolTip,QTextEdit, QDoubleSpinBox, QSpinBox)
 
 from PyQt5.QtGui import QCursor, QPixmap
 
@@ -132,6 +132,15 @@ class StatisticalWindow(QDialog):
         SettingsLayout.addWidget(self.ml_button, 8, 0)
         self.ml_button.clicked.connect(self.run_ml)
 
+        # Add selection tool for number of PCs
+        self.pc_label = QLabel("Number of PCs to use", self)
+        SettingsLayout.addWidget(self.pc_label, 9, 0)
+        self.pc_spinbox = QSpinBox(self)
+        self.pc_spinbox.setRange(1, len(results['scores'][list(results['scores'].keys())[0]]))
+        self.pc_spinbox.setValue(len(results['scores'][list(results['scores'].keys())[0]]))
+        self.pc_spinbox.valueChanged.connect(self.update_pc_selection)
+        SettingsLayout.addWidget(self.pc_spinbox, 10, 0)
+
         SettingsGroupBox.setLayout(SettingsLayout)
         layout.addWidget(SettingsGroupBox, 0, 2)
 
@@ -147,13 +156,17 @@ class StatisticalWindow(QDialog):
         self.file_names = self.score_df.index.tolist()
 
         # Create a dictionary of groups and a list of group names
-        self.Groups, self.GroupList = GroupMaker(self.file_names, keyword='GroupList')
+        # self.Groups, self.GroupList = GroupMaker(self.file_names, keyword='GroupList')
 
-        # Add the group columns to the DataFrame
-        for idx, group in self.Groups.items():
-            # add each grouplist to the dataframe as a new column as categorical data
-            self.score_df[f"Group {idx}"] = pd.Categorical(self.GroupList[idx], categories=group, ordered=True)
-            self.text_output.append(f"Group {idx}: {group}")
+        # # Add the group columns to the DataFrame
+        # for idx, group in self.Groups.items():
+        #     # add each grouplist to the dataframe as a new column as categorical data
+        #     self.score_df[f"Group {idx}"] = pd.Categorical(self.GroupList[idx], categories=group, ordered=True)
+        #     self.text_output.append(f"Group {idx}: {group}")
+
+        # Adjust the number of PCs based on the selection
+        self.update_pc_selection()
+        
 
         # Plot the first dendrogram
         filtered_df = self.score_df.select_dtypes(exclude=['category'])
@@ -162,6 +175,7 @@ class StatisticalWindow(QDialog):
 
 
     def plot_dendrogram(self, data, sample_labels):
+        self.update_pc_selection()
         # Clear the previous figure
         self.figure.clf()
         ax = self.figure.add_subplot(111)
@@ -195,6 +209,7 @@ class StatisticalWindow(QDialog):
         self.canvas.draw()
 
     def plot_kmeans(self, data, k, sample_labels):
+        self.update_pc_selection()
         # clear the previous figure
         self.figure.clf()
         ax = self.figure.add_subplot(111)
@@ -250,6 +265,7 @@ class StatisticalWindow(QDialog):
 
 
     def analyze_clustering(self, df):
+        self.update_pc_selection()
         """
         Runs all clustering significance checks and prints results.
 
@@ -316,6 +332,7 @@ class StatisticalWindow(QDialog):
         return model_class(), message
     
     def run_ml(self):
+        self.update_pc_selection()
         # Get the selected algorithm and the data with numerical features only
         algorithm = self.algorithm_combobox.currentText()
         data = self.score_df.select_dtypes(exclude=['category'])
@@ -399,3 +416,19 @@ class StatisticalWindow(QDialog):
         # Plot the decision boundaries
         if data.shape[1] == 2:
             self.plot_decision_boundaries(val_data, val_target, model)
+
+    def update_pc_selection(self):
+        num_pcs = self.pc_spinbox.value()
+        max_pcs = len(self.results['scores'][list(self.results['scores'].keys())[0]])
+        if num_pcs > max_pcs:
+            num_pcs = max_pcs
+        self.score_df = pd.DataFrame.from_dict(self.results['scores'], orient="index")
+        self.score_df = self.score_df.iloc[:, :num_pcs]
+        self.score_df.columns = [f"PC{i+1}" for i in range(num_pcs)]
+
+        self.Groups, self.GroupList = GroupMaker(self.file_names, keyword='GroupList')
+
+        # Add the group columns to the DataFrame
+        for idx, group in self.Groups.items():
+            # add each grouplist to the dataframe as a new column as categorical data
+            self.score_df[f"Group {idx}"] = pd.Categorical(self.GroupList[idx], categories=group, ordered=True)
