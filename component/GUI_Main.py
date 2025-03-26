@@ -68,16 +68,16 @@ class MainWindow(QWidget):
         InputLayout = QGridLayout()
         
         # Buttons in die erste Spalte
-        self.btn_select = QPushButton('Ordner auswählen', self)
+        self.btn_select = QPushButton('Select Folder', self)
         self.btn_select.clicked.connect(self.selectFolder)
         InputLayout.addWidget(self.btn_select, 0, 0)
 
-        self.btn_init = QPushButton('Initialize DataPreparation', self)
+        self.btn_init = QPushButton('Initialize Data Preparation', self)
         self.btn_init.clicked.connect(self.initializeDataPreparation)
         self.btn_init.setEnabled(False)
         InputLayout.addWidget(self.btn_init, 1, 0)
 
-        self.btn_show_files = QPushButton('Show Name of all Files', self)
+        self.btn_show_files = QPushButton('Show all Files Names', self)
         self.btn_show_files.clicked.connect(self.ShowNameOfAllFiles)
         self.btn_show_files.setEnabled(False)
         InputLayout.addWidget(self.btn_show_files, 2, 0)
