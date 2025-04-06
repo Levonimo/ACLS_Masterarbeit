@@ -304,12 +304,15 @@ class MainWindow(QWidget):
         self.selected_target = None
         # add 'All' at the beginning to the list of file names
         file_names.insert(0, 'All')
+        file_names.insert(0, 'No Warping')
 
         dialog = WarpingSelectionWindow(file_names, parent = self)
         if dialog.exec_():
             self.selected_target = dialog.selected_files
             if 'All' in self.selected_target:
                 self.selected_target = self.data_preparation.get_file_names()
+            elif 'No Warping' in self.selected_target:
+                self.warped_chromatograms = copy(self.chromatograms)
         else:
             self.print_to_output('Please select a file to compare with.')
             return
