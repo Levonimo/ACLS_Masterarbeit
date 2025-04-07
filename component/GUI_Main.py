@@ -313,6 +313,10 @@ class MainWindow(QWidget):
                 self.selected_target = self.data_preparation.get_file_names()
             elif 'No Warping' in self.selected_target:
                 self.warped_chromatograms = copy(self.chromatograms)
+                self.btn_plot.setEnabled(True)
+                self.btn_analyse.setEnabled(True)
+                self.selected_target = self.data_preparation.get_file_names()
+                return
         else:
             self.print_to_output('Please select a file to compare with.')
             return

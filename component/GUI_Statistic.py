@@ -141,6 +141,12 @@ class StatisticalWindow(QDialog):
         self.pc_spinbox.valueChanged.connect(self.update_pc_selection)
         SettingsLayout.addWidget(self.pc_spinbox, 10, 0)
 
+        # Add button to save the current plot
+        self.save_button = QPushButton("Save Current Plot", self)
+        self.save_button.clicked.connect(self.save_current_plot)
+        SettingsLayout.addWidget(self.save_button, 11, 0)
+
+
         SettingsGroupBox.setLayout(SettingsLayout)
         layout.addWidget(SettingsGroupBox, 0, 2)
 
@@ -208,6 +214,8 @@ class StatisticalWindow(QDialog):
         self.figure.subplots_adjust(top=0.94, bottom=0.2, left=0.05, right=0.99)
         self.canvas.draw()
 
+        self.plot_type = "Dendrogram"
+
     def plot_kmeans(self, data, k, sample_labels):
         self.update_pc_selection()
         # clear the previous figure
@@ -260,6 +268,8 @@ class StatisticalWindow(QDialog):
             ax.add_patch(circle)
         # Refresh canvas
         self.canvas.draw()
+
+        self.plot_type = "KMeans"
 
 
 
@@ -390,9 +400,10 @@ class StatisticalWindow(QDialog):
         # Use the target group names as tick labels, ensuring all elements are properly positioned
         tick_labels = list(self.score_df[groupname].cat.categories)
         ticks = np.arange(len(tick_labels))
-        # Set the extent so that all cells (and thus all labels) are centered correctly.
-        #cax = ax.matshow(cm, cmap='viridis', extent=[-0.5, len(tick_labels) - 0.5, len(tick_labels) - 0.5, -0.5])
+        # set colorbar limits from 0 to 1
+        cax.set_clim(0, 1)
         self.figure.colorbar(cax)
+        
         ax.set_xticks(ticks)
         ax.set_yticks(ticks)
         ax.set_xticklabels(tick_labels, rotation=90)
@@ -417,6 +428,8 @@ class StatisticalWindow(QDialog):
         if data.shape[1] == 2:
             self.plot_decision_boundaries(val_data, val_target, model)
 
+        self.plot_type = "CM_" + self.algorithm_combobox.currentText()
+
     def update_pc_selection(self):
         num_pcs = self.pc_spinbox.value()
         max_pcs = len(self.results['scores'][list(self.results['scores'].keys())[0]])
@@ -432,3 +445,15 @@ class StatisticalWindow(QDialog):
         for idx, group in self.Groups.items():
             # add each grouplist to the dataframe as a new column as categorical data
             self.score_df[f"Group {idx}"] = pd.Categorical(self.GroupList[idx], categories=group, ordered=True)
+    
+    def save_current_plot(self):            
+        self.output_folder = os.path.join(self.parent.selected_folder, 'output', f'statistical_analysis_{self.parent.run_id}')
+        os.makedirs(self.output_folder, exist_ok=True)
+        # save plot- add timestamp and what kind of plot it is
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # save the plot with a timestamp and type
+        filename = os.path.join(self.output_folder, f"{self.plot_type}_{timestamp}.png")
+        self.figure.savefig(filename)
+
+        self.text_output.append(f"Plot saved as {filename}")
