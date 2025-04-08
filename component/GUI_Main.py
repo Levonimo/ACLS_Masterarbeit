@@ -3,6 +3,7 @@ import os
 from copy import copy
 import uuid
 import logging
+from time import time
 
 from PyQt5.QtWidgets import (QWidget, QPushButton,
                               QFileDialog, QLabel, QTextEdit,  
@@ -216,9 +217,16 @@ class MainWindow(QWidget):
 
     def initializeDataPreparation(self) -> None:
         if self.selected_folder:
+            t_start = time()
+            self.print_to_output('Initializing Data Preparation...')
             self.data_preparation = mc.DataPreparation(self.selected_folder)
-            self.print_to_output(f'DataPreparation initialized with folder: {self.selected_folder}')
+            t_end = time()
+            self.print_to_output(f'DataPreparation initialized with folder: {self.selected_folder} in {t_end - t_start:.2f} seconds.')
+            self.print_to_output('Loading chromatograms...')
+            t_start = time()
             self.npy_import()
+            t_end = time()
+            self.print_to_output(f'Chromatograms loaded in {t_end - t_start:.2f} seconds.')
             if self.chromatograms:
                 self.rt = self.data_preparation.get_retention_time()
                 self.btn_show_files.setEnabled(True)

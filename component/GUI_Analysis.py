@@ -514,13 +514,13 @@ class PCAWindow(QDialog):
         logging.info(f"Results saved in Run: {self.run_id} to {output_folder}")
 
     def save_plots(self): 
-        output_folder = os.path.join(self.parent.selected_folder,'output', f'results_{self.parent.run_id}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}')
+        output_folder = os.path.join(self.parent.selected_folder,'output', f'results_{self.parent.run_id}')
         os.makedirs(output_folder, exist_ok=True)
 
         # save the current plot as png file using widget screenshot
-        self.plot_graph_right.grab().save(os.path.join(output_folder, 'explained_variance.png'))
-        self.plot_graph_left.grab().save(os.path.join(output_folder, 'scores.png'))
-        self.loadings_plot.grab().save(os.path.join(output_folder, 'loadings.png'))
+        self.plot_graph_right.grab().save(os.path.join(output_folder, f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_explained_variance.png'))
+        self.plot_graph_left.grab().save(os.path.join(output_folder, f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_scores.png'))
+        self.loadings_plot.grab().save(os.path.join(output_folder, f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_loadings.png'))
         # Log the saving of the results
         logging.info(f"Results saved in Run: {self.run_id} to {output_folder}")
   
