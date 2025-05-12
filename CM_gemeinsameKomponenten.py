@@ -83,7 +83,14 @@ def create_compound_presence_matrix(csv_directory, output_file=None):
     
     # DataFrame erstellen
     presence_matrix = pd.DataFrame(matrix_data, index=list(all_compounds))
-    
+
+    # Sortiere nach den letzten 3 Zeichen des file_names
+    presence_matrix = presence_matrix.reindex(sorted(presence_matrix.columns, key=lambda x: x[-3:]), axis=1)
+
+    # Entferne Stoffe die TMS, silyl, silox, silanol enthalten
+    presence_matrix = presence_matrix[~presence_matrix.index.str.contains("TMS|silyl|silox|silanol|Chrom", case=False)]
+    # Sortiere nach den Verbindungen
+    presence_matrix = presence_matrix.reindex(sorted(presence_matrix.index), axis=0)
     # Konfusionsmatrix speichern, wenn ein Ausgabepfad angegeben wurde
     if output_file:
         presence_matrix.to_csv(output_file)
@@ -110,11 +117,11 @@ def visualize_presence_matrix(presence_matrix, output_image=None):
     plt.figure(figsize=(12, min(40, max(10, len(presence_matrix) / 5))))
     
     # Heatmap erstellen
-    ax = sns.heatmap(presence_matrix, cmap="YlGnBu", cbar_kws={'label': 'Vorhanden (1) / Nicht vorhanden (0)'})
+    ax = sns.heatmap(presence_matrix, cmap="YlGnBu", cbar=False)
     
-    plt.title("Verbindungspräsenz in verschiedenen Proben")
-    plt.xlabel("Proben (CSV-Dateien)")
-    plt.ylabel("Verbindungen")
+    plt.title("Compound appearance in samples")
+    plt.xlabel("Samples")
+    plt.ylabel("Compounds")
     
     # Y-Achsen-Beschriftungen lesbar machen
     if len(presence_matrix) > 50:
@@ -123,6 +130,8 @@ def visualize_presence_matrix(presence_matrix, output_image=None):
         visible_labels = [i for i in range(len(presence_matrix)) if i % n == 0]
         ax.set_yticks(visible_labels)
         ax.set_yticklabels([presence_matrix.index[i] for i in visible_labels])
+    
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
     
     plt.tight_layout()
     
