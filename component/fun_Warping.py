@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.signal import savgol_filter
 from copy import copy
 
 def correlation_optimized_warping(reference_2D: np.ndarray, target_2D: np.ndarray, slack: int = 14, segments: int = 100) -> tuple[np.ndarray, np.ndarray]:

@@ -146,6 +146,22 @@ QLabel {
 }
 
 
+QDoubleSpinBox {
+  background-color: #19232D;
+  border: 1px solid #32414B;
+  border-radius: 4px;
+  padding: 2px;
+  padding-left: 5px;
+  color: #E0E1E3;
+  selection-color: #19232D;
+  selection-background-color: #E0E1E3;
+}
+
+
+
+
+
+
 QLineEdit {
 	background-color: rgb(33, 37, 43);
 	border-radius: 5px;
@@ -208,7 +224,7 @@ QMenu::icon:checked { /* when user selects item using mouse or keyboard */
 
 
 QPushButton {
-	border: 1px solid rgb(57, 65, 80);
+	border: 1px solid rgb(110, 115,145);
 	border-radius: 5px;	
 	background-color: rgb(52, 59, 72);
 	color: rgb(255, 255, 255);

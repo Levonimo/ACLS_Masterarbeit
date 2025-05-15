@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import (QDialog, QLabel, QLineEdit, QPushButton, 
                              QCheckBox, QComboBox,QGridLayout, QGroupBox,
                              QMessageBox, QToolTip,QTextEdit, QDoubleSpinBox, QSpinBox)
-
-from PyQt5.QtGui import QCursor, QPixmap
+from PyQt5.QtWidgets import QSizePolicy
+from PyQt5.QtCore import QObject, QEvent
 
 import sys 
 import os
@@ -41,22 +41,33 @@ class StatisticalWindow(QDialog):
         # Set Window Settings
         
         self.setWindowTitle('Statistical Analysis')
-        self.setMinimumSize(400, 400)
+        self.setMinimumSize(900, 700)  # Größeres Standardfenster
         
 
         layout = QGridLayout()
+        #layout.setSpacing(15)  # Mehr Abstand zwischen den Elementen
         self.setLayout(layout)
 
-
-        # Set window UI components
+        # Spalten-Stretching einstellen - gleiche Breite für Spalten 1 und 2
+        layout.setColumnStretch(0, 2)  # Plotting bekommt mehr horizontalen Platz
+        layout.setColumnStretch(1, 1)  # Clustering
+        layout.setColumnStretch(2, 1)  # ML - gleiche Größe wie Clustering
         
-        # Add Box for Plotting Stuff
-        PlottingGroupBox = QGroupBox("Plotting",self)
-        PlottingLayout = QGridLayout(PlottingGroupBox)
+        # Zeilen-Stretching einstellen - macht Output-Fenster vertikal expandierbar
+        layout.setRowStretch(0, 3)  # Obere Zeile (mit Plotting und Steuerungen) mehr Platz
+        layout.setRowStretch(1, 2)  # Untere Zeile (mit Output) - vertikal expandierbar
 
-        # self.PlottingWidget = pg.PlotWidget()
-        # graph_style_chromatogram(self.PlottingWidget)
-        # PlottingLayout.addWidget(self.PlottingWidget, 0, 0)
+        # Gemeinsame Größe für Clustering und ML definieren
+        cluster_width = 200
+        control_height = 230
+
+        # Add Box for Plotting Stuff
+        PlottingGroupBox = QGroupBox("Plotting", self)
+        PlottingLayout = QGridLayout(PlottingGroupBox)
+        
+        # Plotting soll großzügig Platz bekommen und mitwachsen
+        PlottingGroupBox.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        PlottingGroupBox.setMinimumSize(500, 400)  # Mindestgröße festlegen
 
         # Create a matplotlib figure and canvas
         self.figure = Figure(figsize=(8, 6))
@@ -64,92 +75,118 @@ class StatisticalWindow(QDialog):
         PlottingLayout.addWidget(self.canvas, 0, 0)
 
         PlottingGroupBox.setLayout(PlottingLayout)
-        layout.addWidget(PlottingGroupBox, 0, 0)
+        layout.addWidget(PlottingGroupBox, 0, 0, 2, 1)  # Span über 2 Zeilen
 
 
         # Add Box for Text Output
-        OutputGroupBox = QGroupBox("Output",self)
+        OutputGroupBox = QGroupBox("Output", self)
         OutputLayout = QGridLayout(OutputGroupBox)
+        
+        # Output ist in beide Richtungen expandierbar, aber wird quadratisch gehalten
+        OutputGroupBox.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # Breite = Clustering + ML
+        
+        # Dieser Event-Filter sorgt dafür, dass die GroupBox quadratisch bleibt
+        class SquareResizeFilter(QObject):
+            def eventFilter(self, obj, event):
+                if event.type() == QEvent.Resize:
+                    width = obj.width()
+                    obj.setMinimumHeight(width)  # Höhe an Breite anpassen
+                return super().eventFilter(obj, event)
+                
+        self.square_filter = SquareResizeFilter(self)
+        OutputGroupBox.installEventFilter(self.square_filter)
 
         self.text_output = QTextEdit(self)
         self.text_output.setReadOnly(True)
         OutputLayout.addWidget(self.text_output, 0, 0)
 
         OutputGroupBox.setLayout(OutputLayout)
-        layout.addWidget(OutputGroupBox, 0, 1)
+        layout.addWidget(OutputGroupBox, 1, 1, 1, 2)  # Über beide Spalten (Clustering + ML)
 
 
-        # Add Box for Bottons/Parameter Selection
-
-        SettingsGroupBox = QGroupBox("Settings",self)
-        SettingsLayout = QGridLayout(SettingsGroupBox)
-
-        self.dendrogram_button = QPushButton("Dendrogram", self)
-        self.dendrogram_button.clicked.connect(lambda: self.plot_dendrogram(self.score_df, self.file_names))
-        SettingsLayout.addWidget(self.dendrogram_button, 0, 0)
-
-        self.kmeans_button = QPushButton("K-Means Clustering", self)
-        self.kmeans_button.clicked.connect(lambda: self.plot_kmeans(self.score_df, 4, self.file_names))
-        SettingsLayout.addWidget(self.kmeans_button, 1, 0)
-
-        self.analyze_button = QPushButton("Analyze Clustering", self)
-        self.analyze_button.clicked.connect(lambda: self.analyze_clustering(self.score_df))
-        SettingsLayout.addWidget(self.analyze_button, 2, 0)
+        # Add Box for Buttons/Parameter Clustering
+        ClusteringGroupBox = QGroupBox("Clustering", self)
+        ClusterLayout = QGridLayout(ClusteringGroupBox)
+        
+        # Gemeinsame Größe für Clustering und ML
+        ClusteringGroupBox.setFixedSize(200, control_height)
 
         # add Button for select Group for coloring
         self.select_coloring_button = QPushButton('Select Coloring', self)
-        SettingsLayout.addWidget(self.select_coloring_button, 3, 0, 1, 1)
+        ClusterLayout.addWidget(self.select_coloring_button, 0, 0)
         self.select_coloring_button.clicked.connect(self.select_coloring)
 
+        self.dendrogram_button = QPushButton("Dendrogram", self)
+        self.dendrogram_button.clicked.connect(lambda: self.plot_dendrogram(self.score_df, self.file_names))
+        ClusterLayout.addWidget(self.dendrogram_button, 1, 0)
 
-        # add dropdown menu for diffrent supervised maschine learning algorithms
-        self.algorithm_label = QLabel("Size Validation Set", self)
-        SettingsLayout.addWidget(self.algorithm_label, 4, 0, 1, 1)
-        # Using QDoubleSpinBox restricts the input to float values between 0.0 and 0.9
-        self.size_validation_set = QDoubleSpinBox(self)
-        self.size_validation_set.setRange(0.0, 0.9)
-        self.size_validation_set.setSingleStep(0.05)
-        SettingsLayout.addWidget(self.size_validation_set, 5, 0, 1, 1)
+        self.kmeans_button = QPushButton("K-Means Clustering", self)
+        self.kmeans_button.clicked.connect(lambda: self.plot_kmeans(self.score_df, 4, self.file_names))
+        ClusterLayout.addWidget(self.kmeans_button, 2, 0)
+
+        self.analyze_button = QPushButton("Analyze Clustering", self)
+        self.analyze_button.clicked.connect(lambda: self.analyze_clustering(self.score_df))
+        ClusterLayout.addWidget(self.analyze_button, 3, 0)
+
+        # Add button to save the current plot
+        self.save_button = QPushButton("Save Plot", self)
+        self.save_button.clicked.connect(self.save_current_plot)
+        ClusterLayout.addWidget(self.save_button, 4, 0)
+
+        ClusteringGroupBox.setLayout(ClusterLayout)
+        layout.addWidget(ClusteringGroupBox, 0, 1)
+
+
+        # Add Box for Buttons/Parameter Machine Learning
+        MLGroupBox = QGroupBox("Machine Learning", self)
+        MLLayout = QGridLayout(MLGroupBox)
         
-    
+        # Exakt gleiche Größe wie Clustering
+        MLGroupBox.setFixedSize(cluster_width, control_height)
 
-        # add dropdown menu for diffrent supervised maschine learning algorithms
-        self.algorithm_label = QLabel("Supervised Learning Algorithm", self)
-        SettingsLayout.addWidget(self.algorithm_label, 6, 0)
+        # add dropdown menu for different supervised machine learning algorithms
+        self.algorithm_label = QLabel("Algorithm:", self)
+        MLLayout.addWidget(self.algorithm_label, 0, 0)
         self.algorithm_combobox = QComboBox(self)
 
         self.algorithm_combobox.addItem("Naive Bayes")
         self.algorithm_combobox.addItem("K-Nearest Neighbors")
         self.algorithm_combobox.addItem("Linear Discriminant Analysis")
-
         self.algorithm_combobox.addItem("Decision Tree")
         self.algorithm_combobox.addItem("Random Forest")
         self.algorithm_combobox.addItem("Gradient Boosting")
 
-        SettingsLayout.addWidget(self.algorithm_combobox, 7, 0)
-
-        self.ml_button = QPushButton("Supervised ML", self)
-        SettingsLayout.addWidget(self.ml_button, 8, 0)
-        self.ml_button.clicked.connect(self.run_ml)
+        MLLayout.addWidget(self.algorithm_combobox, 0, 1)
 
         # Add selection tool for number of PCs
-        self.pc_label = QLabel("Number of PCs to use", self)
-        SettingsLayout.addWidget(self.pc_label, 9, 0)
+        self.pc_label = QLabel("Number PC's:", self)
+        MLLayout.addWidget(self.pc_label, 1, 0)
         self.pc_spinbox = QSpinBox(self)
         self.pc_spinbox.setRange(1, len(results['scores'][list(results['scores'].keys())[0]]))
         self.pc_spinbox.setValue(len(results['scores'][list(results['scores'].keys())[0]]))
         self.pc_spinbox.valueChanged.connect(self.update_pc_selection)
-        SettingsLayout.addWidget(self.pc_spinbox, 10, 0)
+        MLLayout.addWidget(self.pc_spinbox, 1, 1)
 
-        # Add button to save the current plot
-        self.save_button = QPushButton("Save Current Plot", self)
-        self.save_button.clicked.connect(self.save_current_plot)
-        SettingsLayout.addWidget(self.save_button, 11, 0)
+        # add dropdown menu for different supervised machine learning algorithms
+        self.algorithm_label = QLabel("Size Val. Set:", self)
+        MLLayout.addWidget(self.algorithm_label, 2, 0, 1, 1)
+        # Using QDoubleSpinBox restricts the input to float values between 0.0 and 0.9
+        self.size_validation_set = QDoubleSpinBox(self)
+        self.size_validation_set.setRange(0.0, 0.9)
+        self.size_validation_set.setSingleStep(0.05)
+        MLLayout.addWidget(self.size_validation_set, 2, 1, 1, 1)
+        
+        # add button to run the selected supervised machine learning algorithm
+        self.ml_button = QPushButton("Run ML", self)
+        MLLayout.addWidget(self.ml_button, 3, 0, 1, 2)
+        self.ml_button.clicked.connect(self.run_ml)
+
+        MLGroupBox.setLayout(MLLayout)
+        layout.addWidget(MLGroupBox, 0, 2, 1, 1)
+        
 
 
-        SettingsGroupBox.setLayout(SettingsLayout)
-        layout.addWidget(SettingsGroupBox, 0, 2)
-
+        
 
         # Initialize the class variables
         self.parent = parent
