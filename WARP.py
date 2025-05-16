@@ -1,18 +1,16 @@
 """
-Name and description of the application
+# WARP.py
+# WARP - Warping Algorithm for Retention Profiles to Optimize TD-CIS-GC-MS Data for Statistical Analysis 
+#
+# This script is part of the WARP project, which is designed to optimize retention profiles for TD-CIS-GC-MS data.
 
-    In this section, you can provide a brief description of the application and its purpose.
-
-    In this show who wrote and title of master thesis, and the supervisor of the project.
-
-NAmeOfApp.py (equivalent with main.py)
 """
 
 
 __author__      = "Levin Willi"
-__copyright__   = "Copyright 2025, Zurich University of Applied Sciences, Center for Analytics"
+__copyright__   = "Copyright 2025, Zurich University of Applied Sciences, Center for Analytics, Material and Diagnostics"
 __credits__     = ["Susanne Kern", "Olivier Merlo", "Nicolas Imstepf"]
-__license__     = "GPL3, images: CC BY-NC-SA 4.0"
+__license__     = "GPL3: CC BY-NC-SA 4.0"
 __version__     = "1.0.0"
 __maintainer__  = "Levin Willi"
 __email__       = "levinwilli@protonmail.ch"

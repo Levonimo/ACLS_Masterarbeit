@@ -82,8 +82,6 @@ def correlation_optimized_warping(reference_2D: np.ndarray, target_2D: np.ndarra
             # # Plot the reference and target signals
             # axs[1].plot(reference_1D[start_ref:end_ref + 1], label='Reference')
             # axs[1].plot(target_1D[warped_segment], label='Target')
-            # axs[1].plot(np.diff(reference_1D[start_ref:end_ref + 1]), label='Target Diff')
-            # #axs[1].plot(savgol_filter(np.diff(np.diff(reference_1D[start_ref:end_ref + 1]))*100, 5 ,3), label='Target Diff')
             # axs[1].set_title('Reference and Target Signals')
             # axs[1].set_xlabel('Index')
             # axs[1].set_ylabel('Intensity')
@@ -91,7 +89,8 @@ def correlation_optimized_warping(reference_2D: np.ndarray, target_2D: np.ndarra
             
             # plt.tight_layout()
             # plt.show()
-            
+            # # pause process until user closes the plot
+            # plt.pause(0.51)
 
             if score > best_score:
                 best_score = score

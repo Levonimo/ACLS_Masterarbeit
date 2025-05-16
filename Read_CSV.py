@@ -211,7 +211,7 @@ def main():
     """
     # Benutzereingabe für die Eingabedatei
     #input_file = input("Bitte geben Sie den Pfad zur CSV-Datei ein: ")
-    input_file = "U:/Documents/Masterarbeit/UA_Results/UA.csv"
+    input_file = "U:/Documents/Masterarbeit/UA_Results/UA_Deconvolution.csv"
     
     if not os.path.exists(input_file):
         print(f"Fehler: Die Datei {input_file} existiert nicht!")
