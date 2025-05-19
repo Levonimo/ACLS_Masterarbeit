@@ -113,6 +113,9 @@ def visualize_presence_matrix(presence_matrix, output_image=None):
         print("Keine Daten für die Visualisierung verfügbar.")
         return
     
+    # filter out compounds which only appear in one sample
+    #presence_matrix = presence_matrix.loc[presence_matrix.sum(axis=1) > 1]
+
     # Größe der Grafik basierend auf der Anzahl der Verbindungen anpassen
     plt.figure(figsize=(12, min(40, max(10, len(presence_matrix) / 5))))
     
@@ -131,7 +134,7 @@ def visualize_presence_matrix(presence_matrix, output_image=None):
         ax.set_yticks(visible_labels)
         ax.set_yticklabels([presence_matrix.index[i] for i in visible_labels])
     
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=10, ha='right')
     
     plt.tight_layout()
     
