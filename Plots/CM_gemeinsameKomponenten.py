@@ -80,7 +80,35 @@ def create_compound_presence_matrix(csv_directory, output_file=None):
     for file_name, compounds in file_compounds.items():
         # Für jede Datei eine Spalte erstellen mit 1 (vorhanden) oder 0 (nicht vorhanden)
         matrix_data[file_name] = [1 if compound in compounds else 0 for compound in all_compounds]
+
+    # transform matrix_data to a DataFrame
+    matrix_data = pd.DataFrame(matrix_data, index=list(all_compounds))
+    # check get columns index of matrix_data that contains "SOL" or "SGL" in col names
+    col_index = matrix_data.columns[matrix_data.columns.str.contains("SOL|SGL")]
+    col_index_reverse = matrix_data.columns[~matrix_data.columns.str.contains("SOL|SGL")]
+    # check if each line of matrix_data[colindex] contains 1
+    # if yes, set all values of this line to 2
+    for line in matrix_data.iterrows():
+        flag = False
+        if line[1][col_index].sum() == len(col_index) and line[1][col_index_reverse].sum() == 0:
+            flag = True
+
+        if flag:  
+            # set all values of this line with in the col_index to 2
+            matrix_data.loc[line[0], col_index] = 1.1      
+        
+
+    #  for file_name, compounds in file_compounds.items():
+    #     for file_name, compounds in file_compounds.items():
+    #         # Wenn der Dateiname "SGL" oder "SOL" enthält, mit 2 markieren, ansonsten mit 1
+    #         if "SGL" in file_name or "SOL" in file_name:
+    #             matrix_data[file_name] = [2 if compound in compounds else 0 for compound in all_compounds]
+    #         else:
+    #             matrix_data[file_name] = [1 if compound in compounds else 0 for compound in all_compounds]
+
+    # change value of compounds to 2 if both appear only in samples which contain SGL or SOL
     
+
     # DataFrame erstellen
     presence_matrix = pd.DataFrame(matrix_data, index=list(all_compounds))
 
@@ -114,15 +142,18 @@ def visualize_presence_matrix(presence_matrix, output_image=None):
         return
     
     # filter out compounds which only appear in one sample
-    #presence_matrix = presence_matrix.loc[presence_matrix.sum(axis=1) > 1]
+    # presence_matrix = presence_matrix.loc[presence_matrix.sum(axis=1) > 1]
 
     # Größe der Grafik basierend auf der Anzahl der Verbindungen anpassen
     plt.figure(figsize=(12, min(40, max(10, len(presence_matrix) / 5))))
+
+    color = "CMRmap_r"
+    max_value = 1.1
     
     # Heatmap erstellen
-    ax = sns.heatmap(presence_matrix, cmap="YlGnBu", cbar=False)
+    ax = sns.heatmap(presence_matrix, cmap=color, cbar=False, vmax=max_value)
     
-    plt.title("Compound appearance in samples")
+    # plt.title("Compound appearance in samples")
     plt.xlabel("Samples")
     plt.ylabel("Compounds")
     
@@ -134,7 +165,7 @@ def visualize_presence_matrix(presence_matrix, output_image=None):
         ax.set_yticks(visible_labels)
         ax.set_yticklabels([presence_matrix.index[i] for i in visible_labels])
     
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=10, ha='right')
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=20, ha='right')
     
     plt.tight_layout()
     
