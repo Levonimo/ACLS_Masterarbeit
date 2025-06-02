@@ -304,7 +304,16 @@ class PCAWindow(QDialog):
         self.cut_by_mz_button.clicked.connect(self.cut_chromatogram_by_mz)
 
         # add input field for comment and 
+        self.comment_label = QLabel('Comment:', self)
+        SpecialLayout.addWidget(self.comment_label, 3, 0, 1, 1)
+        self.comment_input = QLineEdit(self)
+        SpecialLayout.addWidget(self.comment_input, 3, 1, 1, 2)
 
+        # add spectrum analysis at time
+        self.spec_at_time = QLineEdit(self)
+        SpecialLayout.addWidget(self.spec_at_time, 3, 3, 1, 1)
+        self.spec_search_button = QPushButton('Search Spectrum', self)
+        SpecialLayout.addWidget(self.spec_search_button, 3, 4, 1, 1)
 
         SpecialGroupBox.setLayout(SpecialLayout)
         layout.addWidget(SpecialGroupBox, 2, 1, 1, 1)
