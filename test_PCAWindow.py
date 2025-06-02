@@ -13,13 +13,13 @@ class NormalGUI(QWidget):
             self.selected_folder = "U:\Documents\Masterarbeit\Daten_MA"
 
 
-            warped = np.load('./Outputs/warped_chromatograms.npy', allow_pickle=True).item()
+            warped = np.load('./output/warped_chromatograms.npy', allow_pickle=True).item()
             # print(warped)
-            unwarped = np.load('./Outputs/unwarped_chromatograms.npy', allow_pickle=True).item()
+            unwarped = np.load('./output/unwarped_chromatograms.npy', allow_pickle=True).item()
             # print(unwarped)
-            targets = np.load('./Outputs/selected_target.npy', allow_pickle=True)
+            targets = np.load('./output/selected_target.npy', allow_pickle=True)
             # print(targets)
-            rt = np.load('./Outputs/retention_time.npy', allow_pickle=True)
+            rt = np.load('./output/retention_time.npy', allow_pickle=True)
 
             self.Groups, self.filename_parts = GroupMaker(targets)
 

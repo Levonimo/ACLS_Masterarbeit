@@ -233,7 +233,7 @@ class MainWindow(QWidget):
                 self.btn_select_file.setEnabled(True)
 
             
-            #np.save('./Outputs/retention_time.npy', self.rt)
+            np.save('./output/retention_time.npy', self.rt)
 
             self.Groups, self.filename_parts = GroupMaker(self.data_preparation.get_file_names())
             self.print_to_output('Groups created.')
@@ -361,9 +361,9 @@ class MainWindow(QWidget):
         self.btn_plot.setEnabled(True)
         self.btn_analyse.setEnabled(True)
         
-        # np.save('./Outputs/warped_chromatograms.npy', self.warped_chromatograms)
-        # np.save('./Outputs/unwarped_chromatograms.npy', self.chromatograms)
-        # np.save('./Outputs/selected_target.npy', self.selected_target)
+        np.save('./output/warped_chromatograms.npy', self.warped_chromatograms)
+        np.save('./output/unwarped_chromatograms.npy', self.chromatograms)
+        np.save('./output/selected_target.npy', self.selected_target)
         
     
     # Plotting the chromatograms all unwarped chromatograms in the top image and all warped chromatograms in the lower image
