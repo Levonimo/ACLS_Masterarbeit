@@ -311,9 +311,9 @@ class PCAWindow(QDialog):
 
         # add spectrum analysis at time
         self.spec_at_time = QLineEdit(self)
-        SpecialLayout.addWidget(self.spec_at_time, 3, 3, 1, 1)
+        SpecialLayout.addWidget(self.spec_at_time, 4, 2, 1, 1)
         self.spec_search_button = QPushButton('Search Spectrum', self)
-        SpecialLayout.addWidget(self.spec_search_button, 3, 4, 1, 1)
+        SpecialLayout.addWidget(self.spec_search_button, 4, 3, 1, 1)
 
         SpecialGroupBox.setLayout(SpecialLayout)
         layout.addWidget(SpecialGroupBox, 2, 1, 1, 1)

@@ -10,8 +10,8 @@ sys.path.insert(1, os.path.dirname(__file__))
 class NormalGUI(QWidget):
         def __init__(self):
             super().__init__()
-            self.selected_folder = "U:\Documents\Masterarbeit\Daten_MA"
-
+            #self.selected_folder = "U:/Documents/Masterarbeit/Daten_MA"
+            self.selected_folder = "F:/Dokumente/Masterarbeit/MA_Daten"
 
             warped = np.load('./output/warped_chromatograms.npy', allow_pickle=True).item()
             # print(warped)
