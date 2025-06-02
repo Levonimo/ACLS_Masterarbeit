@@ -16,7 +16,8 @@ from PyQt5.QtWidgets import (QHBoxLayout, QVBoxLayout, QPushButton, QWidget, QLa
 from PyQt5.QtCore import Qt, QPoint, QEvent
 from PyQt5.QtGui import QStandardItemModel
 
-
+import pyms.Display as Display
+import matplotlib.pyplot as plt
 #=========================================================================================================
 
 class CheckableComboBox(QComboBox): 
@@ -244,3 +245,39 @@ class ColorChoosWindow(QWidget):
                 self.colors[var_item.text()] = col_item.text()
         print(self.colors)  # or do something more sophisticated
         self.close()
+
+
+
+# =========================================================================================================
+# DisplayMassplotWindow
+
+class MassplotWindow(QWidget):
+    def __init__(self, parent=None, Name =None,Mass_Spec = None, Mass_Spec_Ref = None):
+        super().__init__(parent)
+        self.setWindowTitle("Mass Spectra Comparison")
+        self.setGeometry(100, 100, 800, 600)
+
+        # Create a layout
+        layout = QVBoxLayout()
+
+        # creat a matplotlib figure and axis
+        fig, ax = plt.subplots()
+        Display.plot_head2tail(ax, Mass_Spec, Mass_Spec_Ref )
+        ax.set_title(f"Mass Spectra Comparison for {Name}")
+        ax.set_xlabel("m/z")
+        
+        fig.tight_layout()
+
+        # Create a canvas to display the figure
+        self.canvas = Display.MatplotlibCanvas(fig, self)
+        self.canvas.setSizePolicy(
+            Display.MatplotlibCanvas.Expanding, Display.MatplotlibCanvas.Expanding)
+        self.canvas.updateGeometry()
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
+        self.canvas.draw()
+
+    def closeEvent(self, event):
+        """Override close event to clean up the canvas."""
+        self.canvas.close()
+        event.accept()

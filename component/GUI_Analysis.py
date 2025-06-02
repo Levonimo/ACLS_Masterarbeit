@@ -11,7 +11,7 @@ from .fun_PCA import perform_pca
 from .styles_pyqtgraph import graph_style_chromatogram
 import pyqtgraph as pg
 from .fun_Groupmaker import GroupMaker
-from .GUI_components import CheckableComboBox
+from .GUI_components import CheckableComboBox, MassplotWindow
 from .functions import assign_colors
 import numpy as np
 from copy import copy
@@ -19,6 +19,10 @@ from copy import copy
 import uuid
 import logging
 from datetime import datetime
+
+import pyms_nist_search as NIST
+from pyms.Spectrum import MassSpectrum
+import pandas as pd
 
 # =========================================================================================================
 # PCA Window
@@ -314,6 +318,8 @@ class PCAWindow(QDialog):
         SpecialLayout.addWidget(self.spec_at_time, 4, 2, 1, 1)
         self.spec_search_button = QPushButton('Search Spectrum', self)
         SpecialLayout.addWidget(self.spec_search_button, 4, 3, 1, 1)
+        self.spec_search_button.clicked.connect(self.search_spectrum_at_time)
+        self.spec_search_button.setEnabled(False) 
 
         SpecialGroupBox.setLayout(SpecialLayout)
         layout.addWidget(SpecialGroupBox, 2, 1, 1, 1)
@@ -495,6 +501,8 @@ class PCAWindow(QDialog):
 
         # load the first component of the loadings
         self.display_loadings()
+
+        self.spec_search_button.setEnabled(True)  # Enable the spectrum search button after PCA is performed
 
     def save_all_results(self):
         # make a new folder in the output folder with the current date and time
@@ -711,3 +719,45 @@ class PCAWindow(QDialog):
 
         logging.info(f"Run: {self.run_id} Chromatograms m/z cut for values: {mz_values}. New shape: {self.warped_data[self.selected_files[0]].shape}")
 
+    def search_spectrum_at_time(self):
+        '''
+        Search for the spectrum at the given retention time and display it in a new window
+        '''
+        rt = float(self.spec_at_time.text())
+        
+        # get the index of the retention time value that is closest to the given retention time
+        index = np.argmin(np.abs(self.rt - rt))
+
+        # get the mz values and intensities of the reference chromatogram
+        if self.data_from == 'Warped':
+            data = self.warped_data[self.parent.selected_reference_file][index]
+        else:
+            data = self.unwarped_data[self.parent.selected_reference_file][index]
+        
+        # create a new window to display the spectrum
+        # print(self.mz_list)
+        # print(data)
+
+        search = NIST.Engine(
+                "R:/agilent/GC-MS/Software/Library/NIST_MS_Search/mainlib",
+                NIST.NISTMS_MAIN_LIB,
+                )
+
+        mass_spec = MassSpectrum(self.mz_list, data)
+
+        hit = search.full_search_with_ref_data(mass_spec, 1)
+
+
+        logging.info(f"Best Hit at {rt} min: CAS {hit[0][0].cas} {hit[0][0].name} with score {hit[0][0].match_factor} and Hit Ptobability {hit[0][0].hit_prob}")
+
+
+
+        # Display the mass spectrum in a new window
+        spectrum_window = MassplotWindow(hit[0][0].name, mass_spec, hit[0][1].mass_spec, self)
+
+
+        
+
+
+        
+        

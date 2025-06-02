@@ -27,7 +27,8 @@ class NormalGUI(QWidget):
             mz_list = np.round(np.arange(35, 400.1, 1), 1)
             
             self.run_id = 1
-            
+
+            self.selected_reference_file = '051_A2_5_SGL'            
             # Example usage of PCAWindow
             pca_window = PCAWindow(targets, warped, unwarped ,rt, mz_list, parent = self)
             if pca_window.exec_():
