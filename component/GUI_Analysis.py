@@ -6,7 +6,7 @@ from PyQt5.QtGui import QCursor, QPixmap
 
 import sys 
 import os
-from .GUI_Selection import CrossrefFileSelectionWindow, GroupSelectionWindow
+from .GUI_Selection import CrossrefFileSelectionWindow, GroupSelectionWindow,InputDialog
 from .fun_PCA import perform_pca
 from .styles_pyqtgraph import graph_style_chromatogram
 import pyqtgraph as pg
@@ -301,7 +301,7 @@ class PCAWindow(QDialog):
         SpecialLayout.addWidget(self.label_mz, 2, 0, 1, 1)
 
         self.mz_values = QLineEdit(self)
-        SpecialLayout.addWidget(self.mz_values, 2, 1, 1, 2)
+        SpecialLayout.addWidget(self.mz_values, 2, 2, 1, 1)
 
         self.cut_by_mz_button = QPushButton('Cut Chromatogram by m/z', self)
         SpecialLayout.addWidget(self.cut_by_mz_button, 2, 3, 1, 1) 
@@ -311,7 +311,7 @@ class PCAWindow(QDialog):
         self.comment_label = QLabel('Comment:', self)
         SpecialLayout.addWidget(self.comment_label, 3, 0, 1, 1)
         self.comment_input = QLineEdit(self)
-        SpecialLayout.addWidget(self.comment_input, 3, 1, 1, 2)
+        SpecialLayout.addWidget(self.comment_input, 3, 2, 1, 1)
 
         # add spectrum analysis at time
         self.spec_at_time = QLineEdit(self)
@@ -320,6 +320,13 @@ class PCAWindow(QDialog):
         SpecialLayout.addWidget(self.spec_search_button, 4, 3, 1, 1)
         self.spec_search_button.clicked.connect(self.search_spectrum_at_time)
         self.spec_search_button.setEnabled(False) 
+        # press enter in self.spec_at_time connect to search_spectrum_at_time if specsreach_button is enabled
+        self.spec_at_time.returnPressed.connect(lambda: self.search_spectrum_at_time() if self.spec_search_button.isEnabled() else None)
+
+        # add button for Peak detection
+        self.peak_detection_button = QPushButton('Peak Detection', self)
+        SpecialLayout.addWidget(self.peak_detection_button, 5, 3, 1, 1)
+        self.peak_detection_button.clicked.connect(self.peak_detection)
 
         SpecialGroupBox.setLayout(SpecialLayout)
         layout.addWidget(SpecialGroupBox, 2, 1, 1, 1)
@@ -367,6 +374,20 @@ class PCAWindow(QDialog):
             'FFF': (0, 0, 139, 255) # dark blue
         }
         '''
+
+    #=========================================================================================================
+    # Define what happen when close the window by the X button
+    def closeEvent(self, event):
+        if self.results is not None:
+            reply = QMessageBox.question(self, 'Close', 'Do you want to save the results before closing?',
+                                         QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel, QMessageBox.Cancel)
+            if reply == QMessageBox.Yes:
+                self.save_all_results()
+                event.accept()
+            elif reply == QMessageBox.No:
+                event.accept()
+            else:
+                event.ignore()
     #=========================================================================================================
     #=========================================================================================================
     # Functions for the checkboxes
@@ -727,6 +748,8 @@ class PCAWindow(QDialog):
         
         # get the index of the retention time value that is closest to the given retention time
         index = np.argmin(np.abs(self.rt - rt))
+        rt = self.rt[index]
+        self.spec_at_time.setText(str(rt))  # Update the input field with the exact RT value
 
         # get the mz values and intensities of the reference chromatogram
         if self.data_from == 'Warped':
@@ -734,12 +757,25 @@ class PCAWindow(QDialog):
         else:
             data = self.unwarped_data[self.parent.selected_reference_file][index]
         
-        # create a new window to display the spectrum
-        # print(self.mz_list)
-        # print(data)
+        # load system environment variable for mainlib --> system variable PATH_TO_MAIN_LIBRARY
+        # ccheck if PATH_TO_MAIN_LIBRARY is set, if not give warning and use input Window
+        
+        if 'PATH_TO_MAIN_LIBRARY' in os.environ:
+            mainlib_path = os.environ['PATH_TO_MAIN_LIBRARY']
+        else:
+            QMessageBox.warning(self, 'Warning', 'Environment variable PATH_TO_MAIN_LIBRARY is not set. Please set it to the path of the NIST main library.')
+            input = InputDialog(self, title='PATH to mainlib', text='PATH:')
+            if input.exec_():
+                mainlib_path = input.input_text
+            else:
+                logging.error('No main library path provided. Spectrum search aborted.')
+                self.spec_search_button.setEnabled(False)  # Disable the button if no path is provided
+                return
+            return
+        
 
         search = NIST.Engine(
-                "R:/agilent/GC-MS/Software/Library/NIST_MS_Search/mainlib",
+                mainlib_path,
                 NIST.NISTMS_MAIN_LIB,
                 )
 
@@ -753,7 +789,46 @@ class PCAWindow(QDialog):
 
 
         # Display the mass spectrum in a new window
-        spectrum_window = MassplotWindow(hit[0][0].name, mass_spec, hit[0][1].mass_spec, self)
+        spectrum_window = MassplotWindow(self,name = hit[0][0].name, Mass_Spec = mass_spec, Mass_Spec_Ref = hit[0][1].mass_spec)
+
+        if spectrum_window.exec_():
+            if spectrum_window.flag:
+                self.comment_input.setText(hit[0][0].name)
+
+
+    def peak_detection(self):
+        '''
+        Perform peak detection on the selected loadings 
+        '''
+        # Get the selected component
+        component = self.loadings_compound_dropdown.currentIndex()
+        # Get the loadings of the selected component
+        if self.chrom_dim == '2D':
+            loadings = self.results['loadings'][component]
+        elif self.chrom_dim == '3D':
+            loadings = np.sum(self.results['loadings'][component], axis=1)
+
+        # get SD of all loadings
+        sd_loadings = np.std(loadings)
+        
+        # Perform peak detection on the loadings
+        import scipy.signal as find_peaks
+        peaks_pos , _ = find_peaks.find_peaks(loadings, prominence=[None, 40], height=sd_loadings*0.5)
+        peaks_neg, _ = find_peaks.find_peaks(-loadings, prominence=[None, 40], height=sd_loadings*0.5)
+        # Plot the loadings with the peaks
+        self.loadings_plot.clear()
+        self.loadings_plot.enableAutoRange()
+        self.loadings_plot.plot(self.rt, loadings, pen=pg.mkPen(color=(0, 0, 0)))
+        self.loadings_plot.plot(self.rt[peaks_pos], loadings[peaks_pos], pen=None, symbol='o', symbolBrush=(0, 255, 0), symbolSize=10, name='Peaks')
+        self.loadings_plot.plot(self.rt[peaks_neg], loadings[peaks_neg], pen=None, symbol='o', symbolBrush=(255, 0, 0), symbolSize=10, name='Negative Peaks')
+        self.loadings_plot.setLabel('bottom', 'Retention Time')
+        self.loadings_plot.setLabel('left', 'Loading')
+        
+
+
+        
+
+
 
 
         

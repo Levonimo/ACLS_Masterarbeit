@@ -12,7 +12,7 @@ from . import styles, config
 import webbrowser
 
 from PyQt5.QtWidgets import (QHBoxLayout, QVBoxLayout, QPushButton, QWidget, QLayout, QLabel,
-                             QMenu, QAction,  QComboBox, QTableWidget, QTableWidgetItem)
+                             QMenu, QAction,  QComboBox, QTableWidget, QTableWidgetItem,QGridLayout,QDialog)
 from PyQt5.QtCore import Qt, QPoint, QEvent
 from PyQt5.QtGui import QStandardItemModel
 
@@ -251,33 +251,48 @@ class ColorChoosWindow(QWidget):
 # =========================================================================================================
 # DisplayMassplotWindow
 
-class MassplotWindow(QWidget):
-    def __init__(self, parent=None, Name =None,Mass_Spec = None, Mass_Spec_Ref = None):
+class MassplotWindow(QDialog):
+    def __init__(self, parent=None, name =None,Mass_Spec = None, Mass_Spec_Ref = None):
         super().__init__(parent)
+        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+        from matplotlib.figure import Figure
         self.setWindowTitle("Mass Spectra Comparison")
         self.setGeometry(100, 100, 800, 600)
 
-        # Create a layout
-        layout = QVBoxLayout()
-
-        # creat a matplotlib figure and axis
-        fig, ax = plt.subplots()
-        Display.plot_head2tail(ax, Mass_Spec, Mass_Spec_Ref )
-        ax.set_title(f"Mass Spectra Comparison for {Name}")
-        ax.set_xlabel("m/z")
-        
-        fig.tight_layout()
-
-        # Create a canvas to display the figure
-        self.canvas = Display.MatplotlibCanvas(fig, self)
-        self.canvas.setSizePolicy(
-            Display.MatplotlibCanvas.Expanding, Display.MatplotlibCanvas.Expanding)
-        self.canvas.updateGeometry()
-        layout.addWidget(self.canvas)
+        # Create a layout with grid
+        layout = QGridLayout()
         self.setLayout(layout)
+        # Create a canvas for the mass spectra
+        self.figure = Figure(figsize=(8, 6))
+        self.canvas = FigureCanvas(self.figure)
+        layout.addWidget(self.canvas, 0, 0, 2, 2)
+        # Create a button for Decline or Accept the comparison
+        self.decline_button = QPushButton("Decline")
+        self.decline_button.clicked.connect(self.decline)
+        self.accept_button = QPushButton("Accept")  
+        self.accept_button.clicked.connect(self.take)
+        layout.addWidget(self.decline_button, 1, 0)     
+        layout.addWidget(self.accept_button, 1, 1)
+        
+        self.flag = False
+
+        # Plot the mass spectra
+        self.figure.clf()
+        ax = self.figure.add_subplot(111)
+        ax.set_title(f"Mass Spectra Comparison: {name}")
+        ax.set_xlabel("m/z")
+        ax.set_ylabel("Intensity")
+        Display.plot_head2tail(ax, Mass_Spec, Mass_Spec_Ref)
+        self.figure.subplots_adjust(top=0.94, bottom=0.2, left=0.05, right=0.99)
         self.canvas.draw()
 
-    def closeEvent(self, event):
-        """Override close event to clean up the canvas."""
-        self.canvas.close()
-        event.accept()
+
+
+    def take(self):
+        """Handle the accept button click."""
+        self.flag = True
+        self.accept()  # Call accept to set the flag
+
+    def decline(self):
+        """Handle the close button click."""
+        self.reject()  # Close dialog with rejection

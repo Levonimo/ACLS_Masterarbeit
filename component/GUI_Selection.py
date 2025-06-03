@@ -11,9 +11,9 @@ from . import styles
 # =========================================================================================================
 
 class InputDialog(QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent, title='New File Name',text= 'Please enter a File-Name:'):
         super().__init__(parent)
-        self.setWindowTitle('New File-Name')
+        self.setWindowTitle(title)
         self.setGeometry(200, 200, 300, 100)
 
         # Layout
@@ -22,7 +22,7 @@ class InputDialog(QDialog):
         
         layout = QVBoxLayout()
 
-        self.label = QLabel('Please enter a File-Name:', self)
+        self.label = QLabel(text, self)
         layout.addWidget(self.label)
 
         self.input_field = QLineEdit(self)

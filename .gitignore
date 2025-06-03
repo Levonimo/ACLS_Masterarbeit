@@ -5,6 +5,7 @@ __pycache__/*
 
 .vscode/*
 output/*
+Outputs/*
 Outputs/output001.png
 
 # ignore all .h5 files and the directory that contains them
