@@ -7,7 +7,7 @@ from time import time
 
 from PyQt5.QtWidgets import (QWidget, QPushButton,
                               QFileDialog, QLabel, QTextEdit,  
-                              QGridLayout, QGroupBox, QSlider)
+                              QGridLayout, QGroupBox, QSlider, QCheckBox)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 
@@ -25,8 +25,7 @@ from .GUI_components import MyBar
 from .fun_Groupmaker import GroupMaker
 from .functions import SaveGroups
 
-
-
+from .fun_Baseline import baseline_als
 
 
 class MainWindow(QWidget):
@@ -164,6 +163,13 @@ class MainWindow(QWidget):
         ParameterLayout.addWidget(self.slider2_min, 1, 2)
         ParameterLayout.addWidget(self.slider2, 1, 3)
         ParameterLayout.addWidget(self.slider2_max, 1, 4)
+
+        # Add checkbox for basline correction
+        self.baseline_checkbox = QCheckBox('Baseline Correction', self)
+        self.baseline_checkbox.setChecked(False)
+        self.baseline_checkbox.setToolTip('Enable or disable baseline correction for the chromatograms.')
+        ParameterLayout.addWidget(self.baseline_checkbox, 0,5)
+
 
 
         ParameterGroupBox.setFixedHeight(100)
@@ -332,6 +338,23 @@ class MainWindow(QWidget):
         # get slack and segment length from sliders
         slack = self.slider1.value()
         segment_length = self.slider2.value()
+
+
+        if self.baseline_checkbox.isChecked():
+            self.print_to_output('Baseline correction enabled.')
+            timestart = time()
+            for name, chromatogram in self.chromatograms.items():
+                # Baseline correction for each intensity channel (level)
+                corrected = np.zeros_like(chromatogram)
+                for j in range(chromatogram.shape[1]):
+                    signal = chromatogram[:, j]
+                    base = baseline_als(signal, lam=1e6, p=0.01, niter=10)
+                    corrected[:, j] = signal - base
+                self.chromatograms[name] = corrected
+            timeend = time()
+            self.print_to_output(f'Baseline correction done in {timeend - timestart:.2f} seconds for {len(self.chromatograms)} chromatograms.')
+            self.print_to_output('Baseline correction applied.')
+
 
 
         if self.selected_reference_file and self.selected_target:
