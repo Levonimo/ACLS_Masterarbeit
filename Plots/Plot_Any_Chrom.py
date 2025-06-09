@@ -5,7 +5,7 @@ import os
 
 # Parameters
 parameters = dict(
-    data_folder = "U:/Documents/Masterarbeit/250311_PositivKontrolle_PinkyMaden",
+    data_folder = "F:\Dokumente\Masterarbeit\SPME_Arrow_Data",
     retention_time = [],
     tick_interval = 2,
     y_max = "default", #3*10**7,  "default" or a specific value 
@@ -14,8 +14,8 @@ parameters = dict(
     dpi = 300,
     font_size = 9,
     font_family = "Arial",
-    output_folder = "U:/Documents/Masterarbeit/250311_PositivKontrolle_PinkyMaden",
-    output_file_name = "SPME_Chromatogramm_PinkyMaden.png"
+    output_folder = "F:\Dokumente\Masterarbeit\Masterarbeit_Latex\Abbildungen\Results\Direct\SPME_Arrow",
+    output_file_name = "SPME_Arrow_Chromatogramm_PJ.png"
 )
 
 
@@ -58,7 +58,7 @@ def plot_chromatograms(data_folder, retention_time, tick_interval, y_max, image_
 # Call the plotting function with the parameters
 plot_chromatograms(
     data_folder=parameters['data_folder'],
-    retention_time=[4.5, 28.5],  # Adjusted retention time for the SPME data
+    retention_time=[6, 27],  # Adjusted retention time for the SPME data
     tick_interval=parameters['tick_interval'],
     y_max=parameters['y_max'],
     image_height=parameters['image_height'],

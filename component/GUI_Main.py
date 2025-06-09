@@ -348,7 +348,7 @@ class MainWindow(QWidget):
                 corrected = np.zeros_like(chromatogram)
                 for j in range(chromatogram.shape[1]):
                     signal = chromatogram[:, j]
-                    base = baseline_als(signal, lam=1e6, p=0.01, niter=10)
+                    base = baseline_als(signal, lam=1e6, p=0.001, niter=10)
                     corrected[:, j] = signal - base
                 self.chromatograms[name] = corrected
             timeend = time()
