@@ -9,14 +9,22 @@ from concurrent.futures import ThreadPoolExecutor
 
 
 def convert_file(Dfile, path, mzml_path):
-    # Hier bauen Sie den Befehl zum Umwandeln der Datei
-    
+    # Add the msconvert filter “peakPicking true 1-” to convert the raw data (profile mode)
+    # into centered peaks (centroid mode) - for MS1 and all higher MS levels.
+    # ‘true’ activates peak picking (vendor algorithm preferred, otherwise pwiz standard),
+    # ‘1-’ means: MS level 1 and all subsequent levels (e.g. MS2, MS3).
+    # Advantage: smaller file size, better performance and higher compatibility with analysis tools.
+    # https://proteowizard.sourceforge.io/tools/msconvert.html
     command = f"msconvert {os.path.join(path, Dfile)} -o {os.path.join(mzml_path)} --mzML --filter \"peakPicking true 1-\""
+
     try:
+        # Execute the command and check for errors
         subprocess.run(command, check=True)
-        print(f'{Dfile} erfolgreich umgewandelt.')
+        print(f'{Dfile} erfolgreich umgewandelt.')  # Successfully converted
+        
     except subprocess.CalledProcessError as e:
-        print(f'Fehler beim Umwandeln von {Dfile}: {e}')
+        # Handle and report any errors that occur during conversion
+        print(f'Fehler beim Umwandeln von {Dfile}: {e}')  # Error converting
     
 
 
@@ -58,19 +66,27 @@ class DataPreparation:
 
 
     def convert_d_to_mzml(self):
+        # Get all files with .D extension in the input directory
         files = [file for file in os.listdir(self.path) if file.endswith(".D")]
 
+        # Create corresponding .mzML filenames by replacing .D extension
         mzml_file = [file.replace(".D", ".mzML") for file in files]
 
+        # Filter out .mzML files that already exist in the output directory
         mzml_file = [file for file in mzml_file if not os.path.exists(os.path.join(self.mzml_path, file))]
 
+        # Get the list of .D files that need to be processed (those whose .mzML files don't exist yet)
         files_to_process = [file for file in files if file.replace(".D", ".mzML") in mzml_file]
+        
+        # Set the number of worker threads (CPU count minus 4 to avoid overloading the system)
         max_workers = multiprocessing.cpu_count()-4
 
+        # Use ThreadPoolExecutor for parallel processing of files
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # Aufgaben an den Executor übergeben
+            # Submit file conversion tasks to the executor
             futures = [executor.submit(convert_file, Dfile, self.path, self.mzml_path) for Dfile in files_to_process]
 
+            # Wait for all tasks to complete and retrieve results
             for future in concurrent.futures.as_completed(futures):
                 future.result()
 
@@ -99,25 +115,39 @@ class DataPreparation:
         return self.mZ_totlist
 
     def mzml_to_array(self, file_path):
+        """        
+        Parameters:
+            file_path: Path to the mzML file
+        Returns:
+            numpy.ndarray: Compressed chromatogram data
+        """
+        # Input validation
         if not isinstance(file_path, str):
             raise TypeError("file_path must be a string.")
         if not os.path.isfile(file_path):
             raise ValueError("file_path must be a valid file path.")
         print(file_path)
+        
+        # Load the mzML file using pyopenms
         exp = oms.MSExperiment()
         oms.MzMLFile().load(file_path, exp)
         chromatogram = []
 
+        # Process each MS1 spectrum
         for spectrum in exp:
-            if spectrum.getMSLevel() == 1:
+            if spectrum.getMSLevel() == 1:  # Only process MS level 1 spectra
+                # Extract m/z values and intensities
                 mz, intensity = spectrum.get_peaks()
-                mz = np.round(mz, 1)
+                mz = np.round(mz, 1)  # Round m/z values to 1 decimal place
 
+                # Create intensity array matching the full m/z range
                 full_intensity = np.zeros(len(self.mZ_totlist))
-                bins = np.digitize(mz, self.mZ_totlist)
-                full_intensity[bins - 1] = intensity
+                bins = np.digitize(mz, self.mZ_totlist)  # Find index positions for each m/z value
+                full_intensity[bins - 1] = intensity  # Assign intensities to corresponding bins
 
                 chromatogram.append(full_intensity.tolist())
+                
+        # Compress the spectral data (reducing resolution for efficiency)
         chromatogram = self.compression_of_spectra(np.array(chromatogram))
         return np.array(chromatogram)
 
