@@ -1,0 +1,16 @@
+name: warp-env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy
+  - pandas
+  - pyopenms
+  - pyqt
+  - pyqtgraph
+  - matplotlib
+  - seaborn
+  - scikit-learn
+  - scipy
+  - tqdm
+  - pip
