@@ -1,10 +1,9 @@
+pyqt5
+pyqtgraph
+matplotlib
 numpy
 pandas
 pyopenms
-PyQt5
-pyqtgraph
-matplotlib
-seaborn
 scikit-learn
 scipy
-tqdm
+seaborn

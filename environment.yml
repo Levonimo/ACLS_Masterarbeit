@@ -1,16 +1,26 @@
-name: warp-env
+name: WARP_env
 channels:
   - conda-forge
+  - defaults
 dependencies:
-  - python=3.10
-  - numpy
-  - pandas
-  - pyopenms
-  - pyqt
+  # Python-Version (ggf. anpassen)
+  - python=3.12
+
+  # Pakete, die über conda installiert werden
+  - pyqt=5        # entspricht pyqt5
   - pyqtgraph
   - matplotlib
-  - seaborn
-  - scikit-learn
+  - pandas
+  
+  - scikit-learn  # statt "sklearn" (korrekter conda/pip-Name)
   - scipy
-  - tqdm
+
+  # Wichtig: pip selbst muss als Abhängigkeit aufgeführt sein,
+  # damit conda die pip-Installation korrekt durchführt
   - pip
+
+  # Pakete, die explizit über pip installiert werden sollen
+  - pip:
+    - numpy
+    - pyopenms
+    - seaborn

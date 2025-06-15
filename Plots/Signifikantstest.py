@@ -2,14 +2,14 @@ import pandas as pd
 from scipy.stats import mannwhitneyu
 
 # Excel-Datei einlesen, Sheet2 verwenden
-df = pd.read_excel('U:/Documents/Masterarbeit/Flächenunterschiede EIC.xlsx', sheet_name='PJ_Arrow_EIC57_Alkan')
+df = pd.read_excel('U:/Documents/Masterarbeit/Flächenunterschiede EIC.xlsx', sheet_name='PJ_Arrow')
 
 # Nullwerte entfernen, falls vorhanden
-df = df[df["Area (m/z 57)"] > 0]
+df = df[df["Area (m/z 133)"] > 0]
 
 # Gruppen trennen
-larva = df[df["Was"] == "Larva"]["Area (m/z 57)"]
-water_blank = df[df["Was"] == "WaterBlank"]["Area (m/z 57)"]
+larva = df[df["Was"] == "Larva"]["Area (m/z 133)"]
+water_blank = df[df["Was"] == "WaterBlank"]["Area (m/z 133)"]
 
 # Mann-Whitney-U-Test (nicht-parametrisch)
 stat, p = mannwhitneyu(larva, water_blank, alternative='two-sided')
