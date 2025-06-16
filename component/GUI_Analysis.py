@@ -1,4 +1,6 @@
-from PyQt5.QtWidgets import (QDialog, QLabel, QLineEdit, QPushButton, 
+"""Dialog for PCA result visualisation and saving."""
+
+from PyQt5.QtWidgets import (QDialog, QLabel, QLineEdit, QPushButton,
                              QCheckBox, QComboBox,QGridLayout, QGroupBox,
                              QMessageBox, QToolTip)
 

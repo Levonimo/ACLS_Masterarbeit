@@ -4,27 +4,18 @@ from scipy.sparse.linalg import spsolve
 from scipy.sparse import eye, diags
 from scipy.linalg import cho_factor, cho_solve
 
-def baseline_als(y, lam=1e6, p=0.01, niter=10):
-    """
-    Schätzt die Baseline einer 1D‐Kurve y mittels Asymmetric Least Squares (Eilers).
-    
+def baseline_als(y: np.ndarray, lam: float = 1e6, p: float = 0.01, niter: int = 10) -> np.ndarray:
+    """Estimate baseline using asymmetric least squares.
+
+    -------
     Parameter:
-    ----------
-    y : np.ndarray, Form (T,)
-        Die gemessenen Intensitäten eines einzelnen m/z‐Kanals über T Scans.
-    lam : float
-        Glattheitsparameter (je größer, desto glatter).
-        Typische Werte für Chromatographie liegen bei 1e5 ... 1e8.
-    p : float
-        Asymmetrie‐Parameter (Gewichtung des Faktors).
-        p ≈ 0.001 ... 0.1; je kleiner p, desto stärker betont man negative Residuen (Peaks).
-    niter : int
-        Anzahl der Iterationen zur Aktualisierung der Gewichte w.
-    
-    Rückgabe:
-    --------
-    baseline : np.ndarray, Form (T,)
-        Die geschätzte Baseline.
+        y : np.ndarray --> Intensity vector
+        lam : float --> Smoothness parameter
+        p : float --> Asymmetry parameter
+        niter : int --> Iterations for weight update
+
+    Output:
+        baseline : np.ndarray --> Estimated baseline curve
     """
     T = y.shape[0]
     # Unterschiedsmatrix 2. Ordnung (T×T), dünnbesetzt
@@ -56,29 +47,20 @@ def baseline_als(y, lam=1e6, p=0.01, niter=10):
     return baseline
 
 
-def oals_baseline(y, lam=None, p=None, alpha_factor=5.0, epsilon=1e-5, maxiter=50):
-    """
-    Optimized Asymmetric Least Squares (O-ALS) zur Baseline-Schätzung für 1D-Kurve y.
-    
-    Parameter:
-    ----------
-    y : np.ndarray, Form (T,)
-        Gemessene Intensitäten (z. B. ein m/z-Kanal über T Scans).
-    lam : float oder None
-        Falls None, wird lambda automatisch aus dem Rauschlevel geschätzt.
-    p : float oder None
-        Asymmetrie-Parameter. Falls None, wird p initial als 0.01 angenommen und ggf. angepasst.
-    alpha_factor : float
-        Faktor zur Berechnung des Sigmoid-Steilheitsparameters alpha.
-    epsilon : float
-        Konvergenzschwelle für relative Änderung der Baseline.
-    maxiter : int
-        Maximale Anzahl Iterationen, falls epsilon nicht vorher erreicht wird.
+def oals_baseline(y: np.ndarray, lam: float | None = None, p: float | None = None, alpha_factor: float = 5.0, epsilon: float = 1e-5, maxiter: int = 50) -> np.ndarray:
+    """Optimized asymmetric least squares baseline estimation.
 
-    Rückgabe:
-    --------
-    baseline : np.ndarray, Form (T,)
-        Geschätzte Baseline-Kurve b(t).
+    -------
+    Parameter:
+        y : np.ndarray --> Signal vector
+        lam : float | None --> Smoothness parameter
+        p : float | None --> Asymmetry parameter
+        alpha_factor : float --> Steepness factor for sigmoid
+        epsilon : float --> Convergence threshold
+        maxiter : int --> Maximum iterations
+
+    Output:
+        baseline : np.ndarray --> Estimated baseline curve
     """
     T = y.shape[0]
     # 1) Rauschschätzung: Wir nehmen z.B. letzten 10% der Punkte (höchste RTs),

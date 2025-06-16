@@ -1,9 +1,17 @@
+"""Utility functions for color handling and group file operations."""
+
 import colorsys
 import os
 
-def generate_colors(n):
-    """
-    Generiert n verschiedene Farben als Hex-Codes, basierend auf gleichmäßig verteilten Hue-Werten.
+def generate_colors(n: int) -> list:
+    """Generate a list of visually distinct hex color codes.
+
+    -------
+    Parameter:
+        n : int --> Number of colors to generate
+
+    Output:
+        colors : list --> Generated hex color strings
     """
     colors = []
     for i in range(n):
@@ -16,9 +24,15 @@ def generate_colors(n):
         colors.append(hex_color)
     return colors
 
-def assign_colors(elements):
-    """
-    Weist jedem Element in der Liste 'elements' eine Farbe (als Hex-Code) zu.
+def assign_colors(elements: list) -> dict:
+    """Assign a unique hex color to each element.
+
+    -------
+    Parameter:
+        elements : list --> Elements that require colors
+
+    Output:
+        color_mapping : dict --> Mapping of element to color string
     """
     n = len(elements)
     color_list = generate_colors(n)
@@ -26,8 +40,12 @@ def assign_colors(elements):
     return color_mapping
 
 def SaveGroups(groups: dict, filename: str) -> None:
-    """
-    Speichert die Gruppenzuordnung in einer Textdatei.
+    """Write groups to a meta text file.
+
+    -------
+    Parameter:
+        groups : dict --> Mapping from group index to filenames
+        filename : str --> Directory containing a ``meta`` folder
     """
     with open(os.path.join(filename, 'meta', 'Groups.txt'), 'w') as f:
         for _, value in groups.items():
@@ -36,8 +54,14 @@ def SaveGroups(groups: dict, filename: str) -> None:
             f.write('\n')
 
 def LoadGroups(filename: str) -> dict:
-    """
-    Lädt die Gruppenzuordnung aus einer Textdatei.
+    """Load group definitions from ``Groups.txt``.
+
+    -------
+    Parameter:
+        filename : str --> Directory containing ``meta/Groups.txt``
+
+    Output:
+        groups : dict --> Mapping of group index to filenames
     """
     groups = {}
     with open(os.path.join(filename, 'meta', 'Groups.txt'), 'r') as f:
@@ -47,8 +71,15 @@ def LoadGroups(filename: str) -> dict:
     return groups
 
 def LoadSingleGroup(filename: str, group: int) -> list:
-    """
-    Lädt eine einzelne Gruppe aus einer Textdatei.
+    """Return filenames belonging to one group.
+
+    -------
+    Parameter:
+        filename : str --> Directory containing ``meta/Groups.txt``
+        group : int --> Group index to load
+
+    Output:
+        entries : list --> Filenames in the group
     """
     with open(os.path.join(filename, 'meta', 'Groups.txt'), 'r') as f:
         lines = f.readlines()
