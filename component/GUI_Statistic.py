@@ -1,4 +1,6 @@
-from PyQt5.QtWidgets import (QDialog, QLabel, QLineEdit, QPushButton, 
+"""GUI for statistical analysis plots."""
+
+from PyQt5.QtWidgets import (QDialog, QLabel, QLineEdit, QPushButton,
                              QCheckBox, QComboBox,QGridLayout, QGroupBox,
                              QMessageBox, QToolTip,QTextEdit, QDoubleSpinBox, QSpinBox)
 from PyQt5.QtWidgets import QSizePolicy

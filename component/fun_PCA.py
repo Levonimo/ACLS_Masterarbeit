@@ -1,5 +1,5 @@
-# Description: Perform PCA on the data
-#
+"""Utilities for performing PCA on chromatographic data."""
+
 # Load libraries
 from sklearn.decomposition import PCA
 #from sklearn.decomposition import SparsePCA
@@ -8,7 +8,16 @@ import numpy as np
 
 # =========================================================================================================
 # Scaler methods
-def get_scaler(scaler_name):
+def get_scaler(scaler_name: str):
+    """Return a sklearn scaler instance based on the name.
+
+    -------
+    Parameter:
+        scaler_name : str --> Name of the scaler or ``'None'``
+
+    Output:
+        scaler : object --> Instantiated scaler or ``None``
+    """
     if scaler_name == 'None':
         return None
     elif scaler_name == 'StandardScaler':
@@ -24,7 +33,8 @@ def get_scaler(scaler_name):
     
 # =========================================================================================================
 # get the methods
-def get_method(method_name):
+def get_method(method_name: str):
+    """Map user friendly method names to PCA solver names."""
     if method_name == 'svd':
         return 'full'
     elif method_name == 'eigen':
@@ -37,6 +47,19 @@ def get_method(method_name):
 # =========================================================================================================
 # Perform PCA on the data
 def perform_pca(data: dict, n_components: int, scaler_name: str, method_name: str, chrom_dim: str) -> tuple:
+    """Execute PCA on a dictionary of chromatograms.
+
+    -------
+    Parameter:
+        data : dict --> Mapping of sample names to numpy arrays
+        n_components : int --> Number of principal components
+        scaler_name : str --> Name of scaler to apply
+        method_name : str --> PCA solver method
+        chrom_dim : str --> Dimension identifier ("2D" or "3D")
+
+    Output:
+        tuple : tuple --> (scores, loadings, explained_variance)
+    """
     # check if data is not empty
     if data is None:
         return None

@@ -1,8 +1,10 @@
 # pyqtgraph_style.py
+"""Style helpers for pyqtgraph visualizations."""
 
 import pyqtgraph as pg
 
 def graph_style_chromatogram(plot_widget):
+    """Apply a consistent style to chromatogram plots."""
     # Hintergrundfarbe
     plot_widget.setBackground((255, 255, 255))
     

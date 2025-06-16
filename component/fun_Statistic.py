@@ -14,16 +14,16 @@ from itertools import combinations
 
 
 
-def preprocess_data(df):
-    """
-    Extracts numerical PCA data from DataFrame.
-    
-    Parameters:
-        df (pd.DataFrame): Input data containing PCA scores and categorical groups.
+def preprocess_data(df: pd.DataFrame) -> tuple:
+    """Extract numerical PCA values from a DataFrame.
 
-    Returns:
-        np.array: Numerical PCA data for clustering.
-        list: Sample names (index values).
+    -------
+    Parameter:
+        df : pd.DataFrame --> Table containing PCA columns
+
+    Output:
+        pc_data : np.ndarray --> Numerical PCA array
+        sample_names : list --> Names of each sample
     """
     # Select only numerical PCA columns (assuming they start with 'PC')
     pc_data = df.select_dtypes(exclude=['category']).values
@@ -31,14 +31,14 @@ def preprocess_data(df):
     return pc_data, sample_names
 
 def compute_cophenetic_correlation(pc_data):
-    """
-    Computes the cophenetic correlation coefficient.
-    
-    Parameters:
-        pc_data (np.array): PCA scores.
+    """Calculate the cophenetic correlation coefficient.
 
-    Returns:
-        float: Cophenetic correlation coefficient.
+    -------
+    Parameter:
+        pc_data : np.array --> PCA score matrix
+
+    Output:
+        coph_corr : float --> Cophenetic correlation coefficient
     """
     dist_matrix = pdist(pc_data, metric='euclidean')
     linkage_matrix = linkage(dist_matrix, method='ward')
@@ -46,16 +46,16 @@ def compute_cophenetic_correlation(pc_data):
     return coph_corr
 
 def gap_statistic(pc_data, n_refs=10, max_clusters=15):
-    """
-    Computes the optimal number of clusters using the Gap Statistic.
-    
-    Parameters:
-        pc_data (np.array): PCA scores.
-        n_refs (int): Number of reference datasets.
-        max_clusters (int): Maximum number of clusters to test.
+    """Compute optimal cluster count using the Gap statistic.
 
-    Returns:
-        int: Optimal number of clusters.
+    -------
+    Parameter:
+        pc_data : np.array --> PCA score matrix
+        n_refs : int --> Number of reference reference sets
+        max_clusters : int --> Maximum cluster count
+
+    Output:
+        optimal_clusters : int --> Estimated best cluster number
     """
     eps = 1e-10
     gaps = np.zeros(max_clusters)
@@ -78,16 +78,16 @@ def gap_statistic(pc_data, n_refs=10, max_clusters=15):
     return optimal_clusters
 
 def compute_cluster_stability(pc_data, optimal_clusters, num_bootstraps=100):
-    """
-    Measures cluster stability using bootstrapping.
+    """Measure cluster stability using bootstrapping.
 
-    Parameters:
-        pc_data (np.array): PCA scores.
-        optimal_clusters (int): Number of clusters.
-        num_bootstraps (int): Number of bootstrap iterations.
+    -------
+    Parameter:
+        pc_data : np.array --> PCA score matrix
+        optimal_clusters : int --> Chosen cluster count
+        num_bootstraps : int --> Number of bootstrap iterations
 
-    Returns:
-        float: Cluster stability score.
+    Output:
+        stability_score : float --> Averaged variance of bootstrap labels
     """
     bootstrap_labels = []
     for _ in range(num_bootstraps):
@@ -99,37 +99,31 @@ def compute_cluster_stability(pc_data, optimal_clusters, num_bootstraps=100):
     return np.mean(np.var(bootstrap_labels, axis=0))
 
 def compute_silhouette_score(pc_data, optimal_clusters):
-    """
-    Computes the silhouette score to evaluate clustering quality.
+    """Compute the silhouette score for hierarchical clusters.
 
-    Parameters:
-        pc_data (np.array): PCA scores.
-        optimal_clusters (int): Number of clusters.
+    -------
+    Parameter:
+        pc_data : np.array --> PCA score matrix
+        optimal_clusters : int --> Number of clusters
 
-    Returns:
-        float: Silhouette score.
+    Output:
+        score : float --> Silhouette score
     """
     linkage_matrix = linkage(pdist(pc_data), method='ward')
     cluster_labels = fcluster(linkage_matrix, t=optimal_clusters, criterion='maxclust')
     return silhouette_score(pc_data, cluster_labels)
 
 def compute_dunn_index(pc_data, min_clusters=2, max_clusters=15):
-    """
-    Determines the optimal number of clusters based on the Dunn Index.
-    
-    It iterates over candidate cluster numbers (from min_clusters to max_clusters),
-    computes the Dunn Index for each clustering (using hierarchical clustering with Ward's method),
-    and returns the cluster count that achieves the highest Dunn Index along with that index.
-    
-    Parameters:
-        pc_data (np.array): PCA scores.
-        min_clusters (int): Minimum number of clusters to test (default: 2).
-        max_clusters (int): Maximum number of clusters to test (default: 10).
-    
-    Returns:
-        tuple: (optimal_clusters (int), best_dunn (float)) where:
-            optimal_clusters: The number of clusters that received the highest Dunn index.
-            best_dunn: The highest Dunn index value.
+    """Find optimal cluster count using the Dunn index.
+
+    -------
+    Parameter:
+        pc_data : np.array --> PCA score matrix
+        min_clusters : int --> Minimum number of clusters
+        max_clusters : int --> Maximum number of clusters
+
+    Output:
+        (optimal_clusters, best_dunn) : tuple --> Best cluster count and index
     """
     best_dunn = -np.inf
     optimal_clusters = min_clusters
