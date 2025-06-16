@@ -1,3 +1,5 @@
+"""Helper routines for grouping file names into logical sets."""
+
 import numpy as np
 from collections import Counter
 from collections import defaultdict
@@ -18,7 +20,8 @@ from collections import defaultdict
 
 
 
-def detect_delimiter(filenames):
+def detect_delimiter(filenames: list) -> str:
+    """Guess the delimiter used in a list of filenames."""
     delimiters = Counter()
     for filename in filenames:
         for char in filename:
@@ -28,7 +31,8 @@ def detect_delimiter(filenames):
     return most_common_delimiter[0][0] if most_common_delimiter else None
 
 
-def GroupMaker(filenames, keyword = 'Parts'):
+def GroupMaker(filenames: list, keyword: str = 'Parts'):
+    """Split file names into groups based on common tokens."""
     delimiter = detect_delimiter(filenames)
     component_values_set = defaultdict(set)
     component_values_list = defaultdict(list)

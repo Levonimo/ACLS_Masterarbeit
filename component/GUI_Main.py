@@ -1,3 +1,5 @@
+"""Main PyQt application window for the WARP toolkit."""
+
 import sys
 import os
 from copy import copy

@@ -1,8 +1,24 @@
+"""Warping algorithms used to align chromatographic signals."""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from copy import copy
 
 def correlation_optimized_warping(reference_2D: np.ndarray, target_2D: np.ndarray, slack: int = 14, segments: int = 100) -> tuple[np.ndarray, np.ndarray]:
+    """Align two chromatograms using correlation optimized warping.
+
+    -------
+    Parameter:
+        reference_2D : np.ndarray --> Reference chromatogram
+        target_2D : np.ndarray --> Target chromatogram to warp
+        slack : int --> Allowed shift per segment
+        segments : int --> Number of warping segments
+
+    Output:
+        warped_target : np.ndarray --> Warped target chromatogram
+        warp_path : np.ndarray --> Index mapping applied to the target
+        hole_score : float --> Correlation of full chromatograms after warping
+    """
     if reference_2D.ndim != 1:
         # Sum the reference signal along the second axis
         reference_1D = np.sum(reference_2D, axis=1)

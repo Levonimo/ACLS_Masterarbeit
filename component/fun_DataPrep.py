@@ -1,3 +1,5 @@
+"""Data preparation utilities for mzML conversion and I/O."""
+
 import os
 import subprocess
 import numpy as np
@@ -8,11 +10,12 @@ import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 
 
-def convert_file(Dfile, path, mzml_path):
-    # Add the msconvert filter “peakPicking true 1-” to convert the raw data (profile mode)
+def convert_file(Dfile: str, path: str, mzml_path: str) -> None:
+    """Convert Bruker ``.D`` files to mzML using msconvert."""
+    # Add the msconvert filter "peakPicking true 1-" to convert the raw data (profile mode)
     # into centered peaks (centroid mode) - for MS1 and all higher MS levels.
-    # ‘true’ activates peak picking (vendor algorithm preferred, otherwise pwiz standard),
-    # ‘1-’ means: MS level 1 and all subsequent levels (e.g. MS2, MS3).
+    # 'true' activates peak picking (vendor algorithm preferred, otherwise pwiz standard),
+    # '1-' means: MS level 1 and all subsequent levels (e.g. MS2, MS3).
     # Advantage: smaller file size, better performance and higher compatibility with analysis tools.
     # https://proteowizard.sourceforge.io/tools/msconvert.html
     command = f"msconvert {os.path.join(path, Dfile)} -o {os.path.join(mzml_path)} --mzML --filter \"peakPicking true 1-\""
@@ -35,7 +38,9 @@ def frontslash_to_backslash(string):
     return string.replace('/', '\\')
 
 class DataPreparation:
-    def __init__(self, path):
+    """Handle conversion and access to chromatogram data."""
+
+    def __init__(self, path: str) -> None:
         self.chromatograms = {}
         if not isinstance(path, str):
             raise TypeError("Path must be a string.")
@@ -276,10 +281,15 @@ class DataPreparation:
     #     return chromatogram / norm_factor[:, None]
     
     def compression_of_spectra(self, chromatogram):
-        '''
-        This function compresses the spectra to a bigger step size from 0.1 to 1
-        :return:
-        '''
+        """Compress spectra from 0.1 m/z spacing to 1.0.
+
+        -------
+        Parameter:
+            chromatogram : np.ndarray --> Raw chromatogram array
+
+        Output:
+            compressed_chroma : np.ndarray --> Spectra with reduced resolution
+        """
         compressed_chroma = np.sum(chromatogram[:,0:7], axis=1)
         # iterate over the chromatogram and compress the spectra
         # add first 5 elements, then the sum of the next 10 elements until the last 5 elements

@@ -1,4 +1,6 @@
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, 
+"""Selection dialogs for choosing files and groups."""
+
+from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton,
                              QListWidget, QCheckBox, QGridLayout, QGroupBox)
 
 from .fun_Groupmaker import GroupMaker
