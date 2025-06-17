@@ -153,7 +153,7 @@ class DataPreparation:
                 chromatogram.append(full_intensity.tolist())
                 
         # Compress the spectral data (reducing resolution for efficiency)
-        chromatogram = self.compression_of_spectra(np.array(chromatogram))
+        chromatogram = compression_of_spectra(np.array(chromatogram))
         return np.array(chromatogram)
 
 
@@ -280,27 +280,7 @@ class DataPreparation:
     #     norm_factor[norm_factor == 0] = 1  # Avoid division by zero
     #     return chromatogram / norm_factor[:, None]
     
-    def compression_of_spectra(self, chromatogram):
-        """Compress spectra from 0.1 m/z spacing to 1.0.
-
-        -------
-        Parameter:
-            chromatogram : np.ndarray --> Raw chromatogram array
-
-        Output:
-            compressed_chroma : np.ndarray --> Spectra with reduced resolution
-        """
-        compressed_chroma = np.sum(chromatogram[:,0:7], axis=1)
-        # iterate over the chromatogram and compress the spectra
-        # add first 5 elements, then the sum of the next 10 elements until the last 5 elements
-        for j in range(7, np.shape(chromatogram)[1]-3, 10):
-            summed_columns = np.sum(chromatogram[:,j:j+10], axis=1)
-            compressed_chroma = np.vstack((compressed_chroma, summed_columns))
-        #compressed_chroma = np.vstack((compressed_chroma, np.sum(chroma[:,-5:], axis=1)))
-
-        compressed_chroma = np.transpose(compressed_chroma)
-
-        return compressed_chroma
+    
     
     # def perform_pca(self,chromatograms, n_components=10):
     #     """
@@ -378,3 +358,24 @@ class DataPreparation:
     #     # Write the experiment to an mzML file
     #     oms.MzMLFile().store(output_file, exp)
     
+def compression_of_spectra(chromatogram):
+        """Compress spectra from 0.1 m/z spacing to 1.0.
+
+        -------
+        Parameter:
+            chromatogram : np.ndarray --> Raw chromatogram array
+
+        Output:
+            compressed_chroma : np.ndarray --> Spectra with reduced resolution
+        """
+        compressed_chroma = np.sum(chromatogram[:,0:7], axis=1)
+        # iterate over the chromatogram and compress the spectra
+        # add first 5 elements, then the sum of the next 10 elements until the last 5 elements
+        for j in range(7, np.shape(chromatogram)[1]-3, 10):
+            summed_columns = np.sum(chromatogram[:,j:j+10], axis=1)
+            compressed_chroma = np.vstack((compressed_chroma, summed_columns))
+        #compressed_chroma = np.vstack((compressed_chroma, np.sum(chroma[:,-5:], axis=1)))
+
+        compressed_chroma = np.transpose(compressed_chroma)
+
+        return compressed_chroma

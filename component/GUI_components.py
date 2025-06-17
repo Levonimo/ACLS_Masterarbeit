@@ -13,7 +13,7 @@ import webbrowser
 
 from PyQt5.QtWidgets import (QHBoxLayout, QVBoxLayout, QPushButton, QWidget, QLayout, QLabel,
                              QMenu, QAction,  QComboBox, QTableWidget, QTableWidgetItem)
-from PyQt5.QtCore import Qt, QPoint, QEvent
+from PyQt5.QtCore import Qt, QPoint, QEvent, pyqtSignal
 from PyQt5.QtGui import QStandardItemModel
 
 
@@ -43,7 +43,7 @@ class CheckableComboBox(QComboBox):
 #=========================================================================================================       
 class MyBar(QWidget):
     """QWidget to replace the removed title bar and buttons"""
-
+    reset_signal = pyqtSignal()
     def __init__(self, parent: QLayout) -> None:
         super(MyBar, self).__init__()
         
@@ -82,6 +82,7 @@ class MyBar(QWidget):
 
         self.actionclean_up = QAction("reset everything", self)
         self.actionclean_up.setShortcut("Ctrl+R")
+        self.actionclean_up.triggered.connect(self.emit_reset_signal)
 
         menu_setting = QMenu()
         menu_setting.setToolTipsVisible(True)
@@ -155,6 +156,8 @@ class MyBar(QWidget):
                                 self.parent.height())
             self.start = self.end
 
+    def emit_reset_signal(self):
+        self.reset_signal.emit()
 # =========================================================================================================
 # ColorChoosWindow
 # =========================================================================================================

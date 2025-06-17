@@ -8,19 +8,25 @@ from PyQt5.QtGui import QCursor, QPixmap
 
 import sys 
 import os
-from .GUI_Selection import CrossrefFileSelectionWindow, GroupSelectionWindow
-from .fun_PCA import perform_pca
-from .styles_pyqtgraph import graph_style_chromatogram
 import pyqtgraph as pg
-from .fun_Groupmaker import GroupMaker
-from .GUI_components import CheckableComboBox
-from .functions import assign_colors
 import numpy as np
 from copy import copy
 
 import uuid
 import logging
 from datetime import datetime
+
+from .GUI_Selection import CrossrefFileSelectionWindow, GroupSelectionWindow
+from .GUI_components import CheckableComboBox
+
+from .fun_PCA import perform_pca
+from .fun_Groupmaker import GroupMaker
+from .fun_DataPrep import compression_of_spectra
+
+from .styles_pyqtgraph import graph_style_chromatogram
+
+from .functions import assign_colors
+
 
 # =========================================================================================================
 # PCA Window
@@ -324,8 +330,13 @@ class PCAWindow(QDialog):
         self.warped_data = warped
         self.unwarped_data = unwarped   
         self.rt = rt
-        self.mz_list = mz_list
+        self.mz_list = np.array(self.compression_mzlist(mz_list))
         self.results = None
+
+
+
+        
+
 
         #=========================================================================================================
         # Colors by file name endings
@@ -601,11 +612,13 @@ class PCAWindow(QDialog):
             # calculate score for the selected files with the current loadings
             # add them to the score plot with label 'ref'
             for file in crossref_files:
-                color = self.colors[file[-3:]]
+                # check if file contain a key of self.colors
+                for key in self.colors.keys():
+                    if key in file:
+                        color = self.colors[key]
+                        break
 
-
-
-
+                
                 if self.data_from == 'Warped':
                     data = self.warped_data[file]
                 else:
@@ -690,7 +703,9 @@ class PCAWindow(QDialog):
         mz_values = [mz for sublist in mz_values for mz in sublist]
 
         # convert the mz values to float
-        mz_values = [float(mz) for mz in mz_values]
+        mz_values = [int(mz) for mz in mz_values]
+        # convert the mz values to a numpy array
+        mz_values = np.array(mz_values)
 
         # get indices of the mz values that are not in the range of the input values
         indices = np.where(~np.isin(self.mz_list, mz_values))[0]
@@ -704,3 +719,20 @@ class PCAWindow(QDialog):
 
         logging.info(f"Run: {self.run_id} Chromatograms m/z cut for values: {mz_values}. New shape: {self.warped_data[self.selected_files[0]].shape}")
 
+
+    def compression_mzlist(self, list_of_mz):
+        """Compress spectra from 0.1 m/z spacing to 1.0.
+
+        -------
+        Parameter:
+            list_of_mz : list --> raw list
+
+        Output:
+            compressed_list : np.ndarray --> Spectra with reduced resolution
+        """
+        
+        # 1D input: compress by using every 10th elements
+        # Only keep values that are integer when rounded (e.g., 54.0, 55.0, etc.)
+        compressed_list = [int(mz) for mz in list_of_mz if float(mz).is_integer()]
+
+        return compressed_list

@@ -64,7 +64,7 @@ class MainWindow(QWidget):
         self.MenuBar = MyBar(self)
         self.MenuBar.setFixedHeight(40)
         MainWindow.addWidget(self.MenuBar)
-        
+        self.MenuBar.reset_signal.connect(self.reset_application)
 
         InputGroupBox = QGroupBox("Init", objectName="Init")
         InputLayout = QGridLayout()
@@ -445,4 +445,9 @@ class MainWindow(QWidget):
             pass
 
 
-
+    def reset_application(self):
+        """Close and restart the application."""
+        self.close()
+        # Restart the application
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
