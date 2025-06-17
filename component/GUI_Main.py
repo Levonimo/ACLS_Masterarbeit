@@ -218,18 +218,26 @@ class MainWindow(QWidget):
             # Configure logging
             logging.basicConfig(filename=os.path.join(self.selected_folder,'meta', f'logs_{self.run_id}.log'), level=logging.INFO, format='%(asctime)s - %(message)s')
             self.print_to_output(f'Gewählter Ordner: {folder_path}')
-            self.btn_init.setEnabled(True)  # Aktivieren, wenn ein Ordner ausgewählt wurde
+
+            # check if the folder contains .D files
+            if not any(file.endswith('.D') for file in os.listdir(self.selected_folder)):
+                self.print_to_output('Der ausgewählte Ordner enthält keine .D Dateien. Bitte wählen Sie einen anderen Ordner.')
+                self.btn_init.setEnabled(False)
+                return
+            else:
+                self.print_to_output('Ordner enthält .D Dateien. Initialisiere Datenvorbereitung...')
+                self.btn_init.setEnabled(True)
+                
+              
         else:
             self.print_to_output('Kein Ordner ausgewählt')
 
 
     def initializeDataPreparation(self) -> None:
         if self.selected_folder:
-            t_start = time()
             self.print_to_output('Initializing Data Preparation...')
             self.data_preparation = mc.DataPreparation(self.selected_folder)
-            t_end = time()
-            self.print_to_output(f'DataPreparation initialized with folder: {self.selected_folder} in {t_end - t_start:.2f} seconds.')
+            self.print_to_output(f'DataPreparation initialized with folder: {self.selected_folder}.')
             self.print_to_output('Loading chromatograms...')
             t_start = time()
             self.npy_import()
