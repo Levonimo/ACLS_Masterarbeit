@@ -249,7 +249,7 @@ class MainWindow(QWidget):
                 self.btn_select_file.setEnabled(True)
 
             
-            np.save('./output/retention_time.npy', self.rt)
+            # np.save('./output/retention_time.npy', self.rt)
 
             self.Groups, self.filename_parts = GroupMaker(self.data_preparation.get_file_names())
             self.print_to_output('Groups created.')
