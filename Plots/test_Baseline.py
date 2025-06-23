@@ -88,7 +88,7 @@ for name, chrom in chromatogram.items():
     plt.plot(np.sum(chromatogram_arpls[name], axis=1), label=f'arPLS')
 
     plt.plot(np.sum(chromatogram[name], axis=1), label=f'Original', alpha=0.5)
-    plt.title('Baseline Correction Comparison')
+    # plt.title('Baseline Correction Comparison')
     plt.xlabel('Scan Index')    
     plt.ylabel('Intensity')
     # remove right and top spines
