@@ -28,12 +28,22 @@ import uuid
 import logging
 from datetime import datetime
 
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, DBSCAN
+from sklearn.metrics.cluster import contingency_matrix
+from sklearn.mixture import GaussianMixture
 from scipy.spatial.distance import pdist
-from scipy.cluster.hierarchy import linkage, dendrogram
+from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+
+from sklearn.metrics import (
+    adjusted_rand_score,
+    normalized_mutual_info_score,
+    homogeneity_score,
+    completeness_score,
+    v_measure_score
+)
 
 
 
@@ -77,7 +87,7 @@ class StatisticalWindow(QDialog):
         PlottingLayout.addWidget(self.canvas, 0, 0)
 
         PlottingGroupBox.setLayout(PlottingLayout)
-        layout.addWidget(PlottingGroupBox, 0, 0, 2, 1)  # Span über 2 Zeilen
+        layout.addWidget(PlottingGroupBox, 0, 0, 3, 1)  # Span über 3 Zeilen
 
 
         # Add Box for Text Output
@@ -85,25 +95,25 @@ class StatisticalWindow(QDialog):
         OutputLayout = QGridLayout(OutputGroupBox)
         
         # Output ist in beide Richtungen expandierbar, aber wird quadratisch gehalten
-        OutputGroupBox.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # Breite = Clustering + ML
+        # OutputGroupBox.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)  # Breite = Clustering + ML
         
-        # Dieser Event-Filter sorgt dafür, dass die GroupBox quadratisch bleibt
-        class SquareResizeFilter(QObject):
-            def eventFilter(self, obj, event):
-                if event.type() == QEvent.Resize:
-                    width = obj.width()
-                    obj.setMinimumHeight(width)  # Höhe an Breite anpassen
-                return super().eventFilter(obj, event)
+        # # Dieser Event-Filter sorgt dafür, dass die GroupBox quadratisch bleibt
+        # class SquareResizeFilter(QObject):
+        #     def eventFilter(self, obj, event):
+        #         if event.type() == QEvent.Resize:
+        #             width = obj.width()
+        #             obj.setMinimumHeight(width)  # Höhe an Breite anpassen
+        #         return super().eventFilter(obj, event)
                 
-        self.square_filter = SquareResizeFilter(self)
-        OutputGroupBox.installEventFilter(self.square_filter)
+        # self.square_filter = SquareResizeFilter(self)
+        # OutputGroupBox.installEventFilter(self.square_filter)
 
         self.text_output = QTextEdit(self)
         self.text_output.setReadOnly(True)
         OutputLayout.addWidget(self.text_output, 0, 0)
 
         OutputGroupBox.setLayout(OutputLayout)
-        layout.addWidget(OutputGroupBox, 1, 1, 1, 2)  # Über beide Spalten (Clustering + ML)
+        layout.addWidget(OutputGroupBox, 2, 1, 1, 2)  # Span über 2 Spalten (Clustering + ML)
 
 
         # Add Box for Buttons/Parameter Clustering
@@ -187,8 +197,37 @@ class StatisticalWindow(QDialog):
         layout.addWidget(MLGroupBox, 0, 2, 1, 1)
         
 
+         # Add Box for Buttons/Parameter Machine Learning
+        ClusterTestGroupBox = QGroupBox("Test Cluster Assignments", self)
+        # set fixed height
+        ClusterTestGroupBox.setFixedHeight(100)
+        ClusterTestLayout = QGridLayout(ClusterTestGroupBox)
 
-        
+        # add dropdown menu for different supervised machine learning algorithms
+        self.cluster_label = QLabel("Clustering:", self)
+        ClusterTestLayout.addWidget(self.cluster_label, 0, 0)
+        self.cluster_combobox = QComboBox(self)
+
+        self.cluster_combobox.addItem("K-Means")
+        self.cluster_combobox.addItem("Hierarchical")
+        self.cluster_combobox.addItem("DBSCAN")
+        self.cluster_combobox.addItem("Gaussian Mixture Model")
+
+        ClusterTestLayout.addWidget(self.cluster_combobox, 0, 1)
+
+
+        # add button to run the selected supervised machine learning algorithm
+        self.cluster_button = QPushButton("Run Assignment Test", self)
+        ClusterTestLayout.addWidget(self.cluster_button, 0, 2, 1, 1)
+        self.cluster_button.clicked.connect(self.run_cluster_test)
+
+        # Add button to save the current plot
+        self.save_csv_button = QPushButton("  Test all Assignments - Save as CSV  ", self)
+        ClusterTestLayout.addWidget(self.save_csv_button, 1, 2, 1, 1)
+        self.save_csv_button.clicked.connect(self.save_as_csv)
+
+        ClusterTestGroupBox.setLayout(ClusterTestLayout)
+        layout.addWidget(ClusterTestGroupBox, 1, 1, 1, 2)  # Über beide Zeilen (Clustering + ML)
 
         # Initialize the class variables
         self.parent = parent
@@ -324,13 +363,22 @@ class StatisticalWindow(QDialog):
         # Preprocess data
         pc_data, sample_names = preprocess_data(df)
 
+        # number of cluster based on diffrent type of current group
+        if self.colors is not None:
+            number_of_clusters = len(self.colors)
+        else:
+            QMessageBox.warning(self, "Warning", "No coloring group selected. Please select a group for coloring first.")
+            return
+
         # Compute statistics
         cophenetic_corr = compute_cophenetic_correlation(pc_data)
         optimal_clusters = gap_statistic(pc_data)
-        stability_score = compute_cluster_stability(pc_data, optimal_clusters)
-        silhouette = compute_silhouette_score(pc_data, optimal_clusters)
+        stability_score = compute_cluster_stability(pc_data, number_of_clusters)
+        silhouette = compute_silhouette_score(pc_data, number_of_clusters)
         optimal_clusters_dunn, dunn_index = compute_dunn_index(pc_data)
 
+        self.text_output.append(f"Cluster based on current Groups: {number_of_clusters} "
+                                "(Suggests the ideal number of clusters based on expected separation)")
         # Print results to output with descriptions
         self.text_output.append(f"Cophenetic Correlation: {cophenetic_corr:.4f} "
                                 "(Measures how well the dendrogram preserves the pairwise distances)")
@@ -496,3 +544,171 @@ class StatisticalWindow(QDialog):
         self.figure.savefig(filename)
 
         self.text_output.append(f"Plot saved as {filename}")
+
+
+    
+    def cluster_test(self, data=None, algorithm=None, number_of_clusters=None):
+        if algorithm == "K-Means":
+            kmeans = KMeans(n_clusters=number_of_clusters)
+            labels = kmeans.fit_predict(data)
+
+        elif algorithm == "Hierarchical":
+            # Compute the linkage matrix
+            dist_matrix = pdist(data, metric='euclidean')
+            linkage_matrix = linkage(dist_matrix, method='ward')
+            # Form flat clusters
+            labels = fcluster(linkage_matrix, t=number_of_clusters, criterion='maxclust')
+
+        elif algorithm == "DBSCAN":
+            dbscan = DBSCAN(eps=0.5, min_samples=5)
+            labels = dbscan.fit_predict(data)
+            
+            
+        elif algorithm == "Gaussian Mixture Model":
+            gmm = GaussianMixture(n_components=4)
+            gmm.fit(data)
+            labels = gmm.predict(data)
+            
+        
+        else:
+            QMessageBox.warning(self, "Warning", "Selected clustering algorithm is not supported.")
+
+        return labels, algorithm
+
+    def run_cluster_test(self):
+        self.update_pc_selection()
+        # Get the selected algorithm
+        algorithm = self.cluster_combobox.currentText()
+        data = self.score_df.select_dtypes(exclude=['category'])
+
+        # Check if colors (and thus group selection) have been defined
+        if not self.colors:
+            self.text_output.append("Coloring group not selected. Please select a group for coloring first.")
+            return
+
+        first_color = list(self.colors.keys())[0]
+        groupname = next((f"Group {key}" 
+                          for key, group in self.Groups.items() 
+                          if first_color in group), None)
+        target = self.score_df[groupname]
+
+        if self.colors is not None:
+            number_of_clusters = len(self.colors)
+        else:
+            QMessageBox.warning(self, "Warning", "No coloring group selected. Please select a group for coloring first.")
+            return
+
+
+        # Run the clustering test and get the target labels and algorithm
+        labels, algorithm = self.cluster_test(data=data, algorithm=algorithm, number_of_clusters=number_of_clusters)
+
+        # Test Clustering with Adjusted Rand Index, Normalized Mutual Information, Purity Score, Homogeneity, Completeness, and V-Measure
+        ari, nmi, purity, homogeneity, completeness, v_measure = self.evaluate_clustering(target, labels, algorithm)
+        # Print the evaluation results
+        self.print_evaluation_results(ari, nmi, purity, homogeneity, completeness, v_measure, algorithm)
+
+    def purity_score(self, y_true, y_pred):
+        matrix = contingency_matrix(y_true, y_pred)
+        return np.sum(np.amax(matrix, axis=0)) / np.sum(matrix)
+
+    def evaluate_clustering(self, y_true, y_pred, algorithm):
+        ari = adjusted_rand_score(y_true, y_pred)
+        nmi = normalized_mutual_info_score(y_true, y_pred)
+        purity = self.purity_score(y_true, y_pred)
+        homogeneity = homogeneity_score(y_true, y_pred)
+        completeness = completeness_score(y_true, y_pred)
+        v_measure = v_measure_score(y_true, y_pred)
+
+
+        return ari, nmi, purity, homogeneity, completeness, v_measure
+
+    def print_evaluation_results(self, ari, nmi, purity, homogeneity, completeness, v_measure, algorithm):
+        self.text_output.append(f"\n🔍 Clustering Evaluation with {algorithm}:\n")
+
+        self.text_output.append(f"Adjusted Rand Index (ARI): {ari:.4f}")
+        if ari > 0.8:
+            self.text_output.append(" → Very strong agreement with true labels.")
+        elif ari > 0.5:
+            self.text_output.append(" → Moderate agreement.")
+        elif ari > 0.2:
+            self.text_output.append(" → Weak agreement.")
+        else:
+            self.text_output.append(" → Little to no agreement.")
+
+        self.text_output.append(f"\nNormalized Mutual Information (NMI): {nmi:.4f}")
+        if nmi > 0.8:
+            self.text_output.append(" → Clusters preserve most of the label information.")
+        elif nmi > 0.5:
+            self.text_output.append(" → Clusters capture some label information.")
+        else:
+            self.text_output.append(" → Clusters carry little information about the labels.")
+
+        self.text_output.append(f"\nPurity Score: {purity:.4f}")
+        if purity > 0.9:
+            self.text_output.append(" → Nearly all clusters contain only one class.")
+        elif purity > 0.7:
+            self.text_output.append(" → Good purity, but possibly many small clusters.")
+        else:
+            self.text_output.append(" → Many clusters mix multiple classes.")
+
+        self.text_output.append(f"\nHomogeneity: {homogeneity:.4f}")
+        self.text_output.append(f"Completeness: {completeness:.4f}")
+        self.text_output.append(f"V-Measure: {v_measure:.4f}")
+        if homogeneity > 0.8 and completeness > 0.8:
+            self.text_output.append(" → Clusters are both homogeneous and complete – excellent structure.")
+        elif v_measure > 0.5:
+            self.text_output.append(" → Moderate balance between homogeneity and completeness.")
+        else:
+            self.text_output.append(" → Clusters poorly match the true label distribution.")        
+
+    def save_as_csv(self):
+        self.output_folder = os.path.join(self.parent.selected_folder, 'output', f'statistical_analysis_{self.parent.run_id}')
+        os.makedirs(self.output_folder, exist_ok=True)
+        # save plot- add timestamp and what kind of plot it is
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        # Go through all groups and all clusters algorithms and save the evaluation results in a csv file
+        filename = os.path.join(self.output_folder, f"clustering_evaluation_{timestamp}.csv")
+        # Create a DataFrame to hold the results
+        results_df = pd.DataFrame(columns=[
+            "Group", "Algorithm", "Adjusted Rand Index", "Normalized Mutual Information",
+            "Purity Score", "Homogeneity", "Completeness", "V-Measure"
+        ])
+        # Add the results to the DataFrame
+        data = self.score_df.select_dtypes(exclude=['category'])
+
+        results_list = []
+        for group in list(self.Groups.values()):
+            color = assign_colors(group)
+
+            first_color = list(color.keys())[0]
+            groupname = next((f"Group {key}" 
+                            for key, group in self.Groups.items() 
+                            if first_color in group), None)
+            target = self.score_df[groupname]
+
+            for algorithm in ["K-Means", "Hierarchical", "DBSCAN", "Gaussian Mixture Model"]:
+                # Run the clustering test and get the target labels and algorithm
+                labels, algorithm = self.cluster_test(data=data, algorithm=algorithm, number_of_clusters=len(color))
+
+                # Test Clustering with Adjusted Rand Index, Normalized Mutual Information, Purity Score, Homogeneity, Completeness, and V-Measure
+                ari, nmi, purity, homogeneity, completeness, v_measure = self.evaluate_clustering(target, labels, algorithm)
+
+                group_name = ' '.join(color.keys())
+                
+                # Collect the results in a list of dicts
+                results_list.append({
+                    "Group": group_name,
+                    "Algorithm": algorithm,
+                    "Adjusted Rand Index": ari,
+                    "Normalized Mutual Information": nmi,
+                    "Purity Score": purity,
+                    "Homogeneity": homogeneity,
+                    "Completeness": completeness,
+                    "V-Measure": v_measure
+                })
+        # Convert the list of dicts to a DataFrame and save to CSV
+        results_df = pd.DataFrame(results_list)
+        results_df.to_csv(filename, index=False)
+        self.text_output.append(f"Clustering evaluation results saved as {filename}")
+

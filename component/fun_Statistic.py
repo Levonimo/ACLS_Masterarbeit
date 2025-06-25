@@ -65,7 +65,7 @@ def gap_statistic(pc_data, n_refs=10, max_clusters=15):
         inertia = kmeans.inertia_ if kmeans.inertia_ > 0 else eps
         ref_disps = np.zeros(n_refs)
         
-        for i in range(n_refs):
+        for i in range(n_refs-1):
             random_ref = np.random.uniform(pc_data.min(axis=0), pc_data.max(axis=0), size=pc_data.shape)
             ref_kmeans = KMeans(n_clusters=k, random_state=42).fit(random_ref)
             # Replace reference inertia with epsilon if it's zero
@@ -89,6 +89,9 @@ def compute_cluster_stability(pc_data, optimal_clusters, num_bootstraps=100):
     Output:
         stability_score : float --> Averaged variance of bootstrap labels
     """
+    if optimal_clusters < 2:
+        optimal_clusters = 2
+        Warning(f"Optimal clusters set to {optimal_clusters} as it was less than 2.")
     bootstrap_labels = []
     for _ in range(num_bootstraps):
         sample_data = resample(pc_data, random_state=42)
