@@ -281,6 +281,12 @@ class MainWindow(QWidget):
                 self.selected_reference_file = copy(dialog.selected_file)
                 self.print_to_output(f'Reference file: {self.selected_reference_file}')
                 self.plot_graph_top.clear()
+                # make RT and the self.chromatograms[self.selected_reference_file], axis=1 the same length (if not already the case) and make the longer shorter
+                if len(self.rt) != len(self.chromatograms[self.selected_reference_file]):
+                    min_len = min(len(self.rt), len(self.chromatograms[self.selected_reference_file]))
+                    self.rt = self.rt[-min_len:]
+                    self.chromatograms[self.selected_reference_file] = self.chromatograms[self.selected_reference_file][-min_len:]
+
                 self.plot_graph_top.plot(self.rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
                 self.plot_graph_top.setTitle('Unwarped Chromatograms')
                 self.plot_graph_top.setLabel('left', 'Intensity')
