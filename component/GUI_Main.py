@@ -281,11 +281,16 @@ class MainWindow(QWidget):
                 self.selected_reference_file = copy(dialog.selected_file)
                 self.print_to_output(f'Reference file: {self.selected_reference_file}')
                 self.plot_graph_top.clear()
-                # make RT and the self.chromatograms[self.selected_reference_file], axis=1 the same length (if not already the case) and make the longer shorter
-                if len(self.rt) != len(self.chromatograms[self.selected_reference_file]):
-                    min_len = min(len(self.rt), len(self.chromatograms[self.selected_reference_file]))
-                    self.rt = self.rt[-min_len:]
-                    self.chromatograms[self.selected_reference_file] = self.chromatograms[self.selected_reference_file][-min_len:]
+                # Adjust self.rt to match the length of the chromatogram, only change rt (shorten or pad at the end)
+                chrom_len = self.chromatograms[self.selected_reference_file].shape[0]
+                if len(self.rt) > chrom_len:
+                    self.rt = self.rt[-chrom_len:]
+                elif len(self.rt) < chrom_len:
+                    # Pad rt at the end by doubling the last value
+                    pad_len = chrom_len - len(self.rt)
+                    if len(self.rt) > 0:
+                        extension = np.full(pad_len, self.rt[-1]*1.001)
+                        self.rt = np.concatenate([self.rt, extension])
 
                 self.plot_graph_top.plot(self.rt, np.sum(self.chromatograms[self.selected_reference_file], axis=1), pen=pg.mkPen(color=(0, 0, 0)))
                 self.plot_graph_top.setTitle('Unwarped Chromatograms')
